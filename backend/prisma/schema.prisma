@@ -1,0 +1,311 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id               String                   @id @default(uuid())
+  email            String                   @unique
+  passwordHash     String
+  fullName         String
+  phone            String?
+  isEmailVerified  Boolean                  @default(false)
+  emailVerifyToken String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  memberships       OrganisationMembership[]
+  savedListings     SavedListing[]
+  savedCalculations SavedCalculation[]
+  auditLogs         AuditLog[]
+}
+
+model Organisation {
+  id                  String                 @id @default(uuid())
+  legalName           String
+  tradeName           String?
+  registrationNumber  String?                // CIN / LLPIN / GSTIN
+  orgType             String                 // BUYER_CI, RE_DEVELOPER, CONVENTIONAL_GENERATOR, CAPTIVE_PRODUCER, ELECTRICITY_TRADER, STORAGE_OPERATOR, SOLAR_EPC, EQUIPMENT_SUPPLIER, ADVISORY_CONSULTANT
+  verificationStatus  String                 @default("UNVERIFIED") // UNVERIFIED, SUBMITTED_FOR_VERIFICATION, DOCUMENTS_REVIEWED, VERIFIED_FOR_STATED_SCOPE, VERIFICATION_EXPIRED, REJECTED
+  verificationNotes   String?
+  verifiedAt          DateTime?
+  registeredState     String
+  headquartersAddress String?
+  websiteUrl          String?
+  isDemoData          Boolean                @default(false)
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  memberships         OrganisationMembership[]
+  requirements        BuyerRequirement[]
+  listings            MarketplaceListing[]
+  serviceListings     ServiceListing[]
+  documents           Document[]
+  verificationRecords VerificationRecord[]
+  enquiriesSent       Enquiry[]              @relation("BuyerEnquiries")
+  enquiriesReceived   Enquiry[]              @relation("SellerEnquiries")
+  auditLogs           AuditLog[]
+}
+
+model OrganisationMembership {
+  id             String       @id @default(uuid())
+  userId         String
+  organisationId String
+  role           String       @default("BUYER_USER") // BUYER_USER, BUYER_ADMIN, SELLER_USER, SELLER_ADMIN, SERVICE_PROVIDER, VERIFICATION_OFFICER, PLATFORM_ADMIN
+  isPrimaryOrg   Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+}
+
+model BuyerRequirement {
+  id                      String            @id @default(uuid())
+  requirementCode         String            @unique // e.g., REQ-2026-XXXX
+  organisationId          String
+  title                   String
+  industryType            String
+  state                   String
+  discomName              String            // Electricity Distribution Licensee (e.g., TSSPDCL)
+  numberOfFacilities      Int               @default(1)
+  contractDemandKva       Float
+  sanctionedLoadKw        Float
+  monthlyConsumptionKwh   Float
+  currentSupplyCostPerKwh Float?            // Landed cost in Rs/kWh
+  targetRenewablePercent  Float             @default(50.0)
+  preferredTechnology     String?           // Solar, Wind, Hybrid, RTC
+  commercialModel         String            @default("THIRD_PARTY_OPEN_ACCESS") // THIRD_PARTY_OPEN_ACCESS, GROUP_CAPTIVE, CAPTIVE, ROOFTOP_PPA_OPEX
+  requiredStartDate       DateTime
+  contractTenureYears     Int
+  openAccessPreference    String?           // Captive, Group Captive, Third Party
+  additionalNotes         String?
+  status                  String            @default("DRAFT") // DRAFT, ACTIVE, MATCHED, FULFILLED, CLOSED
+  isConsentGivenToShare   Boolean           @default(false)
+  createdAt               DateTime          @default(now())
+  updatedAt               DateTime          @updatedAt
+
+  organisation            Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  enquiries               Enquiry[]
+}
+
+model MarketplaceListing {
+  id                   String               @id @default(uuid())
+  listingCode          String               @unique // e.g., LST-2026-XXXX
+  organisationId       String
+  title                String
+  slug                 String               @unique
+  category             String               // ELECTRICITY_SUPPLY, SOLAR_POWER, WIND_POWER, HYBRID_RENEWABLE, RTC_FIRM_POWER, CAPTIVE_POWER, GROUP_CAPTIVE, OPEN_ACCESS_SHORT_TERM, BATTERY_STORAGE, PUMPED_HYDRO_STORAGE, SOLAR_EPC, ELECTRICAL_EQUIPMENT, POWER_CONSULTANCY
+  commercialModel      String               // THIRD_PARTY_OPEN_ACCESS, GROUP_CAPTIVE, CAPTIVE, ROOFTOP_PPA_OPEX, CAPEX_SALE, ENERGY_STORAGE_SERVICE_AGREEMENT, EPC_TURNKEY, CONS_RETAINER
+  state                String
+  projectLocation      String
+  totalCapacityMw      Float
+  availableCapacityMw  Float
+  indicativePricePerKwh Float?              // In Rs/kWh (null if purely custom)
+  priceBasisConditions String?              // e.g. "Ex-busbar at 33kV STU, escalates 2% pa"
+  contractDurationYears Int?
+  expectedAvailabilityDate DateTime
+  interconnectionType  String               @default("STU_INTRA_STATE") // CTU_INTER_STATE, STU_INTRA_STATE, BEHIND_THE_METER
+  substationDetails    String?
+  projectStatus        String               @default("OPERATIONAL") // OPERATIONAL, UNDER_CONSTRUCTION, READY_TO_BUILD, ADVANCED_DEVELOPMENT, FEASIBILITY_STAGE
+  regulatoryApprovals  String?              // e.g. "In-principle STU connectivity obtained"
+  isFeatured           Boolean              @default(false)
+  status               String               @default("DRAFT") // DRAFT, UNDER_REVIEW, PUBLISHED, SUSPENDED, EXPIRED, ARCHIVED
+  isDemoData           Boolean              @default(false)
+  viewCount            Int                  @default(0)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organisation         Organisation         @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  renewableDetails     RenewableAssetDetail?
+  storageDetails       StorageAssetDetail?
+  documents            ListingDocument[]
+  enquiries            Enquiry[]
+  savedByUsers         SavedListing[]
+}
+
+model RenewableAssetDetail {
+  id                   String              @id @default(uuid())
+  listingId            String              @unique
+  technology           String              // Solar Mono-PERC, Wind Class-III, Hybrid, RTC
+  dcAcRatio            Float?
+  cuFactorPercent      Float?              // Capacity Utilisation Factor (CUF %)
+  expectedAnnualGenMu  Float?              // Million Units (MUs)
+  captiveStructureInfo String?             // e.g. "Compliant with 26% equity / 51% consumption"
+  bankingTerms         String?
+
+  listing              MarketplaceListing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model StorageAssetDetail {
+  id                     String             @id @default(uuid())
+  listingId              String             @unique
+  storageType            String             // BESS Li-ion LFP, Pumped Hydro Storage (PSP)
+  powerCapacityMw        Float              // Instantaneous power (MW)
+  energyCapacityMwh      Float              // Total stored energy capacity (MWh)
+  durationHours          Float              // Discharge duration in hours
+  roundTripEfficiencyPct Float?             // RTE %
+  chargingEnergySource   String?            // Dedicated Solar, Off-peak Grid
+  commercialPricingModel String?            // Fixed Capacity charge Rs/MW/month or Rs/kWh throughput
+
+  listing                MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+}
+
+model ServiceListing {
+  id                   String               @id @default(uuid())
+  serviceCode          String               @unique // SRV-2026-XXXX
+  organisationId       String
+  title                String
+  category             String               // Open Access Advisory, Solar EPC, Energy Audit, etc.
+  description          String
+  geographicalCoverage String               // Comma-separated or JSON list of states
+  qualifications       String?
+  pricingModel         String?
+  status               String               @default("PUBLISHED") // DRAFT, PUBLISHED, ARCHIVED
+  isDemoData           Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  organisation         Organisation         @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model TenderOpportunity {
+  id                 String     @id @default(uuid())
+  tenderRefNo        String     @unique
+  issuingAuthority   String     // SECI, NTPC, TSSPDCL, GUVNL, SJVN
+  tenderType         String     // POWER_PROCUREMENT, RENEWABLE_ENERGY, BESS_STORAGE, SOLAR_EPC, TRANSMISSION_EVACUATION, EQUIPMENT_SUPPLY, ADVISORY_CONSULTANCY
+  title              String
+  state              String
+  capacityMw         Float?
+  estimatedValueInr  Float?     // In INR Lakhs or Crores
+  submissionDeadline DateTime   // UTC timestamp, displayed in Asia/Kolkata
+  sourceUrl          String
+  documentAttachment String?
+  isVerifiedSource   Boolean    @default(true)
+  isDemoData         Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+}
+
+model Document {
+  id             String            @id @default(uuid())
+  organisationId String
+  title          String
+  documentType   String            // CONNECTIVITY_APPROVAL, AUDITED_BALANCE_SHEET, PPA_TRACK_RECORD
+  fileKey        String            // Private storage key
+  mimeType       String
+  fileSize       Int
+  isVerified     Boolean           @default(false)
+  verifiedAt     DateTime?
+  verifiedBy     String?
+  createdAt      DateTime          @default(now())
+
+  organisation   Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  listingLinks   ListingDocument[]
+}
+
+model ListingDocument {
+  id         String             @id @default(uuid())
+  listingId  String
+  documentId String
+
+  listing    MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  document   Document           @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, documentId])
+}
+
+model VerificationRecord {
+  id             String             @id @default(uuid())
+  organisationId String
+  reviewerUserId String
+  previousStatus String
+  newStatus      String
+  scopeNotes     String             // Evidence reviewed, legal scope certified
+  createdAt      DateTime           @default(now())
+
+  organisation   Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+model Enquiry {
+  id                  String             @id @default(uuid())
+  enquiryCode         String             @unique // ENQ-2026-XXXX
+  listingId           String
+  buyerOrganisationId String
+  sellerOrganisationId String
+  requirementId       String?
+  proposedCapacityMw  Float?
+  message             String
+  status              String             @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, SHARED_WITH_SUPPLIER, RESPONSE_RECEIVED, NEGOTIATION, CLOSED, WITHDRAWN
+  buyerConsentGranted Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  listing             MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  buyerOrganisation   Organisation       @relation("BuyerEnquiries", fields: [buyerOrganisationId], references: [id], onDelete: Cascade)
+  sellerOrganisation  Organisation       @relation("SellerEnquiries", fields: [sellerOrganisationId], references: [id], onDelete: Cascade)
+  requirement         BuyerRequirement?  @relation(fields: [requirementId], references: [id], onDelete: SetNull)
+  messages            EnquiryMessage[]
+}
+
+model EnquiryMessage {
+  id             String       @id @default(uuid())
+  enquiryId      String
+  senderUserId   String
+  senderOrgId    String
+  senderName     String
+  messageText    String
+  createdAt      DateTime     @default(now())
+
+  enquiry        Enquiry      @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+}
+
+model SavedListing {
+  id         String             @id @default(uuid())
+  userId     String
+  listingId  String
+  createdAt  DateTime           @default(now())
+
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing    MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+}
+
+model SavedCalculation {
+  id             String       @id @default(uuid())
+  userId         String
+  scenarioName   String
+  state          String
+  annualKwh      Float
+  existingTariff Float
+  proposedTariff Float
+  calculatedData String       // JSON string of all surcharges, losses and annual savings
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id             String        @id @default(uuid())
+  userId         String?
+  organisationId String?
+  action         String        // LISTING_SUBMITTED, VERIFICATION_DECISION, ENQUIRY_STATUS_CHANGE
+  entityName     String        // MarketplaceListing, Organisation, etc.
+  entityId       String
+  metadata       String?       // JSON string
+  ipAddress      String?
+  userAgent      String?
+  createdAt      DateTime      @default(now())
+
+  user           User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: SetNull)
+}

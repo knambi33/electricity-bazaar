@@ -77,13 +77,18 @@ flowchart LR
 
 ---
 
-## 4. Initial Geographic Focus: Telangana Pilot Benchmark
+## 4. Flagship Dual Pilot: Telangana & Tamil Nadu Benchmark
 
-To ensure extreme regulatory precision and market traction, Electricity Bazaar establishes **Telangana (TSSPDCL & TSNPDCL)** as its flagship pilot state:
-1. **High C&I Concentration**: Major industrial clusters in Hyderabad, Medak, Rangareddy, and Warangal (Pharma, IT, Textiles, Heavy Manufacturing).
-2. **High Retail Tariffs**: HT-I industrial tariffs range from ₹7.50 to ₹9.20/kWh, creating an attractive financial spread for open access savings.
-3. **Active Regulatory Activity**: TSERC actively issues bi-annual additional surcharge orders and annual retail tariff orders, making dynamic regulatory intelligence an invaluable tool.
-4. **Subsequent Expansion Sequence**:
-   - Phase 1 Pilot: **Telangana**
-   - Phase 1 Expansion: **Gujarat, Maharashtra, Rajasthan, Tamil Nadu, Karnataka**
+To ensure extreme regulatory precision and immediate market traction, Electricity Bazaar establishes **Telangana (TSERC / TSSPDCL / TGNPDCL)** and **Tamil Nadu (TNERC / TANGEDCO / TNPDCL)** as its flagship dual pilot states:
+1. **Tamil Nadu (Launch Customer Focus)**:
+   - High concentration of High Tension (HT) industrial consumers in automotive clusters (Chennai, Sriperumbudur), foundries & textiles (Coimbatore, Tirupur, Erode), and engineering manufacturing.
+   - Significant commercial tariff pressure: TANGEDCO HT-I industrial retail supply tariffs reach ₹8.75/kWh with Cross-Subsidy Surcharges (CSS) at ₹2.12/kWh.
+   - High demand for Group Captive structuring to eliminate CSS and secure landed green power under ₹5.20/kWh.
+   - Direct connection to rich renewable corridors: Wind hubs in Kayathar, Muppandal, and Aralvaimozhi; Solar hubs in Kamuthi, Virudhunagar, and Tuticorin.
+2. **Telangana**:
+   - Major industrial clusters in Hyderabad, Medak, Rangareddy, and Warangal (Pharma, Bulk Drugs, IT, Heavy Manufacturing).
+   - HT-I industrial tariffs range from ₹7.50 to ₹9.20/kWh with active bi-annual TSERC Additional Surcharge adjustments.
+3. **Subsequent Expansion Sequence**:
+   - Phase 1 Dual Pilot: **Telangana & Tamil Nadu**
+   - Phase 1 Expansion: **Gujarat, Maharashtra, Rajasthan, Karnataka**
    - Phase 2: Pan-India coverage across all 28 states and union territories.
