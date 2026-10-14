@@ -100,6 +100,9 @@ export function evaluateListingMatch(
   ) {
     score += 12;
     matchReasons.push(`Alternative Open Access Model: Listing offers ${listing.commercialModel.replace(/_/g, ' ')}, which is convertible with contract structuring.`);
+  } else if (requirement.commercialModel === "IEX_EXCHANGE") {
+    score += 15;
+    matchReasons.push(`Power Market Intermediation: Listing generator / trader can facilitate exchange-cleared or bilateral hedging power.`);
   } else {
     score += 5;
     mismatchFactors.push(`Commercial Model Divergence: Buyer seeks ${requirement.commercialModel}, seller offers ${listing.commercialModel}.`);

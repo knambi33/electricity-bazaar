@@ -146,8 +146,8 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
       setContractedGreenShare(85);
       handleStageAdvance(2);
     } else if (category === 'IEX_EXCHANGE') {
-      setCommercialModel('THIRD_PARTY_OPEN_ACCESS');
-      setProposedPpaTariff(4.50);
+      setCommercialModel('IEX_EXCHANGE');
+      setProposedPpaTariff(4.20);
       setContractedGreenShare(50);
       handleStageAdvance(2);
     } else if (category === 'BESS_STORAGE') {
@@ -156,11 +156,14 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
   };
 
   // Stage 2: Landed Cost Engine Configuration
-  const [commercialModel, setCommercialModel] = useState<'GROUP_CAPTIVE' | 'THIRD_PARTY_OPEN_ACCESS'>('GROUP_CAPTIVE');
+  const [commercialModel, setCommercialModel] = useState<'GROUP_CAPTIVE' | 'THIRD_PARTY_OPEN_ACCESS' | 'IEX_EXCHANGE'>('GROUP_CAPTIVE');
   const [contractedGreenShare, setContractedGreenShare] = useState<number>(85);
   const [proposedPpaTariff, setProposedPpaTariff] = useState<number>(3.70);
   const [landedCostResults, setLandedCostResults] = useState<LandedCostOutputs | null>(null);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
+
+  // Active Voltage Profile Data
+  const currentVoltageData = stateProfile?.voltageLevels.find(v => v.level === voltageLevel) || stateProfile?.voltageLevels[0];
 
   // Stage 3: Live Supplier Matches
   const [matches, setMatches] = useState<MatchResult[]>([]);
@@ -206,24 +209,31 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
   const runEconomicsSimulation = async () => {
     setIsCalculating(true);
     try {
-      const currentVoltageData = stateProfile?.voltageLevels.find(v => v.level === voltageLevel) || stateProfile?.voltageLevels[0];
+      const activeVoltageData = stateProfile?.voltageLevels.find(v => v.level === voltageLevel) || stateProfile?.voltageLevels[0];
       
       const isGroupCaptive = commercialModel === 'GROUP_CAPTIVE';
-      const css = isGroupCaptive ? 0 : (currentVoltageData?.crossSubsidySurchargeRsPerKwh || 2.12);
+      const isIex = commercialModel === 'IEX_EXCHANGE';
+      const css = isGroupCaptive ? 0 : (activeVoltageData?.crossSubsidySurchargeRsPerKwh || 2.12);
       const as = isGroupCaptive ? 0 : (stateProfile?.additionalSurchargeRsPerKwh || 0.55);
+      const banking = isIex ? 0 : (stateProfile?.bankingChargesRsPerKwh || 0.28);
+      const ctuLoss = isIex ? 3.2 : 0;
+      const stuLoss = activeVoltageData?.stuTransmissionLossPercent || 3.9;
+      // For IEX, include CTU POC transmission charge (0.38) and exchange transaction fee (0.02)
+      const transmissionCharge = (stateProfile?.transmissionChargeRsPerKwh || 0.34) + (isIex ? 0.38 : 0);
+      const sldcAndScheduling = (stateProfile?.sldcChargesRsPerKwh || 0.05) + (isIex ? 0.02 : 0);
 
       const outputs = await api.evaluateLandedCost({
         annualConsumptionKwh: monthlyUnitsKwh * 12,
         currentLandedTariff: derivedLandedTariff,
         proposedEnergyTariff: proposedPpaTariff,
-        transmissionChargePerKwh: stateProfile?.transmissionChargeRsPerKwh || 0.34,
-        wheelingChargePerKwh: currentVoltageData?.wheelingChargeRsPerKwh || 0.88,
+        transmissionChargePerKwh: transmissionCharge,
+        wheelingChargePerKwh: activeVoltageData?.wheelingChargeRsPerKwh || 0.88,
         crossSubsidySurchargePerKwh: css,
         additionalSurchargePerKwh: as,
-        bankingChargesPerKwh: stateProfile?.bankingChargesRsPerKwh || 0.28,
-        stuLossPercent: currentVoltageData?.stuTransmissionLossPercent || 3.9,
-        ctuLossPercent: 0,
-        sldcAndSchedulingChargePerKwh: stateProfile?.sldcChargesRsPerKwh || 0.05,
+        bankingChargesPerKwh: banking,
+        stuLossPercent: stuLoss,
+        ctuLossPercent: ctuLoss,
+        sldcAndSchedulingChargePerKwh: sldcAndScheduling,
         contractedGreenSharePercent: contractedGreenShare
       });
 
@@ -234,6 +244,22 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
       setIsCalculating(false);
     }
   };
+
+  // Automatically re-run economics simulation whenever parameters change in Stage 2
+  useEffect(() => {
+    if (monthlyUnitsKwh > 0 && derivedLandedTariff > 0) {
+      runEconomicsSimulation();
+    }
+  }, [
+    commercialModel,
+    proposedPpaTariff,
+    contractedGreenShare,
+    voltageLevel,
+    selectedState,
+    derivedLandedTariff,
+    monthlyUnitsKwh,
+    stateProfile
+  ]);
 
   // Query live supplier matches in Stage 3
   const findMatchingSuppliers = async () => {
@@ -1027,22 +1053,28 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   Procurement Model
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
-                    onClick={() => { setCommercialModel('GROUP_CAPTIVE'); }}
-                    className={`py-2.5 px-3 rounded-lg text-xs font-bold border transition ${
+                    onClick={() => {
+                      setCommercialModel('GROUP_CAPTIVE');
+                      if (proposedPpaTariff > 4.50 || proposedPpaTariff === 4.20) setProposedPpaTariff(3.70);
+                    }}
+                    className={`py-2.5 px-2 rounded-lg text-xs font-bold border transition text-center ${
                       commercialModel === 'GROUP_CAPTIVE'
                         ? 'bg-teal-600 text-navy-900 border-teal-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                     }`}
                   >
-                    Group Captive (0 CSS)
+                    Group Captive
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setCommercialModel('THIRD_PARTY_OPEN_ACCESS'); }}
-                    className={`py-2.5 px-3 rounded-lg text-xs font-bold border transition ${
+                    onClick={() => {
+                      setCommercialModel('THIRD_PARTY_OPEN_ACCESS');
+                      if (proposedPpaTariff === 3.70 || proposedPpaTariff === 4.20) setProposedPpaTariff(4.50);
+                    }}
+                    className={`py-2.5 px-2 rounded-lg text-xs font-bold border transition text-center ${
                       commercialModel === 'THIRD_PARTY_OPEN_ACCESS'
                         ? 'bg-teal-600 text-navy-900 border-teal-600 shadow-sm'
                         : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
@@ -1050,41 +1082,81 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                   >
                     Third-Party OA
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCommercialModel('IEX_EXCHANGE');
+                      if (proposedPpaTariff === 3.70 || proposedPpaTariff === 4.50) setProposedPpaTariff(4.20);
+                    }}
+                    className={`py-2.5 px-2 rounded-lg text-xs font-bold border transition text-center ${
+                      commercialModel === 'IEX_EXCHANGE'
+                        ? 'bg-teal-600 text-navy-900 border-teal-600 shadow-sm'
+                        : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    IEX Exchange
+                  </button>
                 </div>
-                <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                  {commercialModel === 'GROUP_CAPTIVE' ? (
-                    <span className="text-teal-700 font-medium">
-                      ✓ Statutorily exempt from Cross-Subsidy Surcharge (CSS) & Additional Surcharge under Electricity Act Sec 42(2). Requires 26% equity subscription in generator SPV.
-                    </span>
-                  ) : (
-                    <span className="text-amber-700 font-medium">
-                      ⚠ Applicable CSS (₹{stateProfile?.voltageLevels[0]?.crossSubsidySurchargeRsPerKwh || '2.12'}/kWh) and Additional Surcharge apply.
+                <div className="text-[11px] text-slate-600 mt-2 leading-relaxed bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  {commercialModel === 'GROUP_CAPTIVE' && (
+                    <span className="text-teal-800 font-medium">
+                      ✓ <strong>Group Captive SPV:</strong> Statutorily exempt from Cross-Subsidy Surcharge (CSS) & Additional Surcharge under Electricity Act Sec 42(2). Requires 26% equity subscription and 51% captive consumption.
                     </span>
                   )}
-                </p>
+                  {commercialModel === 'THIRD_PARTY_OPEN_ACCESS' && (
+                    <span className="text-amber-900 font-medium">
+                      ⚠ <strong>Third-Party Open Access:</strong> Bilateral PPA with independent generator. Full CSS (₹{(currentVoltageData?.crossSubsidySurchargeRsPerKwh || 2.12).toFixed(2)}/kWh) and Additional Surcharge (₹{(stateProfile?.additionalSurchargeRsPerKwh || 0.55).toFixed(2)}/kWh) apply.
+                    </span>
+                  )}
+                  {commercialModel === 'IEX_EXCHANGE' && (
+                    <span className="text-blue-900 font-medium">
+                      ⚡ <strong>IEX Power Exchange:</strong> Collective purchase via Day-Ahead Market (DAM) or Real-Time Market (RTM). Market Clearing Price (MCP) + IEX fee (₹0.02) + CTU (3.2% loss + ₹0.38 POC) + STU wheeling + statutory CSS & AS surcharges.
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {/* Proposed PPA Generation Tariff Slider */}
+              {/* Proposed PPA Generation Tariff / MCP Slider */}
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Generator Ex-Busbar PPA Tariff
+                    {commercialModel === 'IEX_EXCHANGE' 
+                      ? 'IEX Market Clearing Price (MCP)' 
+                      : commercialModel === 'THIRD_PARTY_OPEN_ACCESS'
+                      ? 'Bilateral IPP Ex-Busbar Tariff'
+                      : 'Generator Ex-Busbar PPA Tariff'}
                   </label>
                   <span className="text-sm font-bold text-teal-700">₹{proposedPpaTariff.toFixed(2)} / kWh</span>
                 </div>
                 <input
                   type="range"
-                  min="2.80"
-                  max="5.50"
+                  min={commercialModel === 'IEX_EXCHANGE' ? '2.50' : '2.80'}
+                  max={commercialModel === 'IEX_EXCHANGE' ? '8.00' : '6.50'}
                   step="0.05"
                   value={proposedPpaTariff}
                   onChange={(e) => setProposedPpaTariff(parseFloat(e.target.value))}
                   className="w-full accent-teal-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
                 />
                 <div className="flex justify-between text-[10px] text-slate-500 mt-1">
-                  <span>₹2.80 (Aggressive)</span>
-                  <span>₹3.70 (Market avg in {selectedState})</span>
-                  <span>₹5.50</span>
+                  {commercialModel === 'IEX_EXCHANGE' ? (
+                    <>
+                      <span>₹2.50 (Solar Hours)</span>
+                      <span>₹4.20 (DAM Avg)</span>
+                      <span>₹8.00 (Peak Block)</span>
+                    </>
+                  ) : commercialModel === 'THIRD_PARTY_OPEN_ACCESS' ? (
+                    <>
+                      <span>₹3.20 (Aggressive)</span>
+                      <span>₹4.50 (Market avg in {selectedState})</span>
+                      <span>₹6.50</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>₹2.80 (Aggressive)</span>
+                      <span>₹3.70 (Market avg in {selectedState})</span>
+                      <span>₹5.50</span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1092,13 +1164,13 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Target Renewable Share
+                    {commercialModel === 'IEX_EXCHANGE' ? 'Target Exchange Power Share' : 'Target Renewable Share'}
                   </label>
                   <span className="text-sm font-bold text-teal-700">{contractedGreenShare}%</span>
                 </div>
                 <input
                   type="range"
-                  min="30"
+                  min="20"
                   max="100"
                   step="5"
                   value={contractedGreenShare}
@@ -1106,16 +1178,16 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                   className="w-full accent-teal-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">
-                  Remaining {100 - contractedGreenShare}% will be balanced from {discomName.split(' ')[0]} at ₹{derivedLandedTariff}/kWh.
+                  Remaining {100 - contractedGreenShare}% will be balanced from {discomName.split(' ')[0]} at ₹{derivedLandedTariff.toFixed(2)}/kWh.
                 </span>
               </div>
 
               {/* Recalculate button */}
               <button
                 onClick={runEconomicsSimulation}
-                className="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-2.5 rounded-xl text-xs transition"
+                className="w-full bg-navy-800 hover:bg-navy-900 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center space-x-1.5"
               >
-                {isCalculating ? 'Computing Formula...' : 'Update Simulation Parameters'}
+                <span>{isCalculating ? 'Computing Formula...' : 'Update Simulation Parameters'}</span>
               </button>
             </div>
 
@@ -1138,72 +1210,127 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                       </span>
                     </div>
 
-                    <div className="bg-teal-50 border border-teal-200 p-4 rounded-xl">
-                      <span className="text-[11px] font-bold text-teal-800 uppercase tracking-wider block">
-                        Unit Savings Spread
+                    <div className={`p-4 rounded-xl border ${landedCostResults.costDifferencePerKwh >= 0 ? 'bg-teal-50 border-teal-200' : 'bg-amber-50 border-amber-200'}`}>
+                      <span className={`text-[11px] font-bold uppercase tracking-wider block ${landedCostResults.costDifferencePerKwh >= 0 ? 'text-teal-800' : 'text-amber-800'}`}>
+                        {landedCostResults.costDifferencePerKwh >= 0 ? 'Unit Savings Spread' : 'Unit Surcharge Premium'}
                       </span>
-                      <div className="text-2xl font-extrabold text-teal-700 mt-1">
-                        ₹{landedCostResults.costDifferencePerKwh.toFixed(2)}
-                        <span className="text-xs font-normal text-teal-700"> / unit</span>
+                      <div className={`text-2xl font-extrabold mt-1 ${landedCostResults.costDifferencePerKwh >= 0 ? 'text-teal-700' : 'text-amber-700'}`}>
+                        {landedCostResults.costDifferencePerKwh >= 0 ? '₹' : '+₹'}
+                        {Math.abs(landedCostResults.costDifferencePerKwh).toFixed(2)}
+                        <span className="text-xs font-normal"> / unit</span>
                       </div>
-                      <span className="text-[11px] text-teal-800 font-semibold">
-                        {landedCostResults.savingsPercentage.toFixed(1)}% Cost Reduction
+                      <span className={`text-[11px] font-semibold ${landedCostResults.costDifferencePerKwh >= 0 ? 'text-teal-800' : 'text-amber-800'}`}>
+                        {landedCostResults.costDifferencePerKwh >= 0 
+                          ? `${landedCostResults.savingsPercentage.toFixed(1)}% Cost Reduction` 
+                          : `${Math.abs(landedCostResults.savingsPercentage).toFixed(1)}% Over Grid Rate`}
                       </span>
                     </div>
 
-                    <div className="bg-gradient-to-br from-navy-900 to-teal-900 text-white p-4 rounded-xl shadow-md">
-                      <span className="text-[11px] font-bold text-teal-300 uppercase tracking-wider block">
-                        Estimated Annual Savings
+                    <div className={`p-4 rounded-xl shadow-md ${landedCostResults.annualSavingsInr >= 0 ? 'bg-gradient-to-br from-navy-900 to-teal-900 text-white' : 'bg-gradient-to-br from-slate-900 to-amber-950 text-white'}`}>
+                      <span className={`text-[11px] font-bold uppercase tracking-wider block ${landedCostResults.annualSavingsInr >= 0 ? 'text-teal-300' : 'text-amber-300'}`}>
+                        {landedCostResults.annualSavingsInr >= 0 ? 'Estimated Annual Savings' : 'Estimated Surcharge Impact'}
                       </span>
                       <div className="text-2xl font-extrabold text-white mt-1">
-                        ₹{(landedCostResults.annualSavingsInr / 10000000).toFixed(2)} Cr
+                        {landedCostResults.annualSavingsInr >= 0 ? '₹' : '+₹'}
+                        {Math.abs(landedCostResults.annualSavingsInr / 10000000).toFixed(2)} Cr
                       </div>
                       <span className="text-[10px] text-slate-300">
-                        (₹{(landedCostResults.annualSavingsInr / 100000).toFixed(2)} Lakhs per annum)
+                        ({landedCostResults.annualSavingsInr >= 0 ? '₹' : '+₹'}{Math.abs(landedCostResults.annualSavingsInr / 100000).toFixed(2)} Lakhs per annum)
                       </span>
                     </div>
                   </div>
 
                   {/* Landed Cost Waterfall Breakdown */}
                   <div className="border border-slate-200 rounded-xl p-5 bg-white">
-                    <h3 className="text-sm font-bold text-navy-900 mb-3 flex items-center space-x-2">
-                      <span>Itemized Delivered Cost Breakdown ({commercialModel.replace(/_/g, ' ')})</span>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-sm font-bold text-navy-900">
+                          Itemized Delivered Cost Breakdown
+                        </h3>
+                        <span className="text-[10px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded font-bold">
+                          {commercialModel === 'GROUP_CAPTIVE' ? 'Group Captive SPV' : commercialModel === 'IEX_EXCHANGE' ? 'IEX Power Exchange' : 'Third-Party Open Access'}
+                        </span>
+                      </div>
                       <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
                         Loss Multiplier: {landedCostResults.effectiveLossFactor}x
                       </span>
-                    </h3>
+                    </div>
+
                     <div className="space-y-2 text-xs">
+                      {/* Row 1: Energy / MCP Base */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-600">Base Energy Tariff (Grossed up for STU {stateProfile?.voltageLevels[0]?.stuTransmissionLossPercent || 3.9}% loss)</span>
+                        <span className="text-slate-600">
+                          {commercialModel === 'IEX_EXCHANGE' 
+                            ? `IEX Clearing Price (MCP grossed up for CTU 3.2% + STU ${currentVoltageData?.stuTransmissionLossPercent || 3.9}% losses)`
+                            : `Base Energy Tariff (Grossed up for STU ${currentVoltageData?.stuTransmissionLossPercent || 3.9}% loss)`}
+                        </span>
                         <span className="font-semibold text-slate-900">₹{landedCostResults.openAccessEnergyTariffGrossedUp.toFixed(4)} / kWh</span>
                       </div>
+
+                      {/* Row 2: IEX Fee (Only for IEX) */}
+                      {commercialModel === 'IEX_EXCHANGE' && (
+                        <div className="flex justify-between py-1.5 border-b border-slate-100">
+                          <span className="text-slate-600">IEX Exchange Transaction & Settlement Fee</span>
+                          <span className="font-semibold text-slate-900">₹0.0200 / kWh</span>
+                        </div>
+                      )}
+
+                      {/* Row 3: CTU POC Transmission (Only for IEX) */}
+                      {commercialModel === 'IEX_EXCHANGE' && (
+                        <div className="flex justify-between py-1.5 border-b border-slate-100">
+                          <span className="text-slate-600">Inter-State CTU (POC) Transmission Charges</span>
+                          <span className="font-semibold text-slate-900">₹0.3800 / kWh</span>
+                        </div>
+                      )}
+
+                      {/* Row 4: STU Transmission & Wheeling */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-600">State Transmission & Wheeling Charges</span>
+                        <span className="text-slate-600">
+                          {commercialModel === 'IEX_EXCHANGE' ? 'Intra-State (STU) Transmission & Wheeling Charges' : 'State Transmission & Wheeling Charges'}
+                        </span>
                         <span className="font-semibold text-slate-900">
-                          ₹{((stateProfile?.transmissionChargeRsPerKwh || 0.34) + (stateProfile?.voltageLevels[0]?.wheelingChargeRsPerKwh || 0.88)).toFixed(2)} / kWh
+                          ₹{((stateProfile?.transmissionChargeRsPerKwh || 0.34) + (currentVoltageData?.wheelingChargeRsPerKwh || 0.88)).toFixed(4)} / kWh
                         </span>
                       </div>
+
+                      {/* Row 5: Cross-Subsidy Surcharge (CSS) */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
                         <span className="text-slate-600">Cross-Subsidy Surcharge (CSS)</span>
                         <span className={`font-semibold ${commercialModel === 'GROUP_CAPTIVE' ? 'text-teal-600' : 'text-slate-900'}`}>
-                          {commercialModel === 'GROUP_CAPTIVE' ? '₹0.00 (Statutory Exemption)' : `₹${stateProfile?.voltageLevels[0]?.crossSubsidySurchargeRsPerKwh || '2.12'} / kWh`}
+                          {commercialModel === 'GROUP_CAPTIVE' 
+                            ? '₹0.0000 (Statutory Exemption)' 
+                            : `₹${(currentVoltageData?.crossSubsidySurchargeRsPerKwh || 2.12).toFixed(4)} / kWh`}
                         </span>
                       </div>
+
+                      {/* Row 6: Additional Surcharge (AS) */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
                         <span className="text-slate-600">Additional Surcharge (AS)</span>
                         <span className={`font-semibold ${commercialModel === 'GROUP_CAPTIVE' ? 'text-teal-600' : 'text-slate-900'}`}>
-                          {commercialModel === 'GROUP_CAPTIVE' ? '₹0.00 (Exempt)' : `₹${stateProfile?.additionalSurchargeRsPerKwh || '0.55'} / kWh`}
+                          {commercialModel === 'GROUP_CAPTIVE' 
+                            ? '₹0.0000 (Exempt)' 
+                            : `₹${(stateProfile?.additionalSurchargeRsPerKwh || 0.55).toFixed(4)} / kWh`}
                         </span>
                       </div>
+
+                      {/* Row 7: Banking & SLDC */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
-                        <span className="text-slate-600">Banking Charges & SLDC Scheduling</span>
+                        <span className="text-slate-600">
+                          {commercialModel === 'IEX_EXCHANGE' 
+                            ? 'NLDC / RLDC / SLDC Operating & Scheduling Charges' 
+                            : 'Banking Charges & SLDC Scheduling'}
+                        </span>
                         <span className="font-semibold text-slate-900">
-                          ₹{((stateProfile?.bankingChargesRsPerKwh || 0.28) + (stateProfile?.sldcChargesRsPerKwh || 0.05)).toFixed(2)} / kWh
+                          {commercialModel === 'IEX_EXCHANGE' 
+                            ? `₹${(stateProfile?.sldcChargesRsPerKwh || 0.05).toFixed(4)} / kWh`
+                            : `₹${((stateProfile?.bankingChargesRsPerKwh || 0.28) + (stateProfile?.sldcChargesRsPerKwh || 0.05)).toFixed(4)} / kWh`}
                         </span>
                       </div>
-                      <div className="flex justify-between py-2 bg-slate-50 font-bold text-slate-900 px-3 rounded-lg">
-                        <span>Total 100% Open Access Landed Cost</span>
-                        <span className="text-teal-700">₹{landedCostResults.totalOpenAccessLandedCostPerKwh.toFixed(2)} / kWh</span>
+
+                      {/* Total Delivered Cost */}
+                      <div className="flex justify-between py-2.5 bg-slate-50 font-bold text-slate-900 px-3 rounded-lg border border-slate-200 mt-2">
+                        <span>Total 100% {commercialModel === 'IEX_EXCHANGE' ? 'IEX Exchange' : commercialModel === 'GROUP_CAPTIVE' ? 'Group Captive' : 'Open Access'} Landed Cost</span>
+                        <span className="text-teal-700 text-sm">₹{landedCostResults.totalOpenAccessLandedCostPerKwh.toFixed(2)} / kWh</span>
                       </div>
                     </div>
                   </div>
