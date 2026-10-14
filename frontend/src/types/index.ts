@@ -262,3 +262,32 @@ export interface StateRegulatoryProfile {
   regulatoryAuthority: string;
   disclaimer: string;
 }
+
+export interface ExtractedBillField {
+  field: string;
+  value: string | number;
+  confidence: 'HIGH' | 'MEDIUM' | 'INFERRED';
+  sourceSnippet?: string;
+}
+
+export interface ExtractedBillData {
+  state: string;
+  discomName: string;
+  consumerNumber: string;
+  consumerName: string;
+  billingMonth: string;
+  tariffCategory: string;
+  voltageLevel: string;
+  contractDemandKva: number;
+  recordedDemandKva?: number;
+  monthlyUnitsKwh: number;
+  monthlyEnergyChargeInr: number;
+  monthlyDemandChargeInr: number;
+  electricityDutyInr: number;
+  fuelSurchargeInr: number;
+  totalBillInr: number;
+  derivedLandedTariff: number;
+  confidenceScore: number;
+  extractedFields: ExtractedBillField[];
+  rawTextPreview?: string;
+}

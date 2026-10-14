@@ -9,7 +9,8 @@ import {
   LandedCostOutputs,
   StateRegulatoryProfile,
   User,
-  Organisation
+  Organisation,
+  ExtractedBillData
 } from "../types";
 
 const API_BASE = "/api/v1";
@@ -138,6 +139,22 @@ class ApiService {
       method: "POST",
       body: JSON.stringify(billData)
     });
+  }
+
+  async extractBillData(payload: {
+    fileName?: string;
+    fileType?: string;
+    base64Content?: string;
+    samplePreset?: string;
+  }): Promise<ExtractedBillData> {
+    return this.request<ExtractedBillData>("/calculator/extract-bill", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async getBillSamples(): Promise<any[]> {
+    return this.request<any[]>("/calculator/bill-samples");
   }
 
   async getStates(): Promise<string[]> {

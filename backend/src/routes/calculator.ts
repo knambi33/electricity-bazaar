@@ -4,6 +4,7 @@ import { z } from "zod";
 import { calculateLandedCost, LandedCostInputs } from "../utils/calculator";
 import { STATE_REGULATORY_PROFILES } from "../data/regulatoryRates";
 import { authenticateToken } from "../middleware/auth";
+import { extractBillDetails, SAMPLE_BILLS } from "../utils/billParser";
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -84,6 +85,39 @@ router.post("/bill-decompose", (req: Request, res: Response): void => {
   } catch (err) {
     res.status(500).json({ success: false, error: { code: "INTERNAL_ERROR", message: "Failed to decompose bill" } });
   }
+});
+
+// Extract bill details from uploaded PDF, Image Base64, or Sample Presets
+router.post("/extract-bill", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { fileName, fileType, base64Content, samplePreset } = req.body;
+    const extracted = await extractBillDetails({
+      fileName,
+      fileType,
+      base64Content,
+      samplePreset
+    });
+    res.json({ success: true, data: extracted });
+  } catch (err: any) {
+    console.error("Bill extraction error:", err);
+    res.status(400).json({ success: false, error: { code: "EXTRACTION_FAILED", message: err.message || "Failed to extract bill data" } });
+  }
+});
+
+// List sample bill presets available for testing
+router.get("/bill-samples", (_req: Request, res: Response): void => {
+  res.json({
+    success: true,
+    data: Object.keys(SAMPLE_BILLS).map(key => ({
+      presetKey: key,
+      state: SAMPLE_BILLS[key].state,
+      discomName: SAMPLE_BILLS[key].discomName,
+      consumerName: SAMPLE_BILLS[key].consumerName,
+      contractDemandKva: SAMPLE_BILLS[key].contractDemandKva,
+      monthlyUnitsKwh: SAMPLE_BILLS[key].monthlyUnitsKwh,
+      derivedLandedTariff: SAMPLE_BILLS[key].derivedLandedTariff
+    }))
+  });
 });
 
 // Get all supported states

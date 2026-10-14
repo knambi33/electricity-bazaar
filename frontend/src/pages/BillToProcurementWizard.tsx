@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   FileText, 
   ArrowRight, 
@@ -13,10 +13,20 @@ import {
   Send,
   Sliders,
   DollarSign,
-  Info
+  Info,
+  UploadCloud,
+  Sparkles,
+  RefreshCw,
+  Eye,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  FileCode,
+  X,
+  Download
 } from 'lucide-react';
 import { api } from '../services/api';
-import { MatchResult, MarketplaceListing, LandedCostOutputs, StateRegulatoryProfile } from '../types';
+import { MatchResult, MarketplaceListing, LandedCostOutputs, StateRegulatoryProfile, ExtractedBillData } from '../types';
 
 interface BillWizardProps {
   setCurrentView: (view: string) => void;
@@ -38,6 +48,90 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
 
   // State regulatory profile fetched from backend
   const [stateProfile, setStateProfile] = useState<StateRegulatoryProfile | null>(null);
+
+  // Automated Bill Upload & Extraction State
+  const [uploadedFile, setUploadedFile] = useState<{ name: string; size: number; type: string } | null>(null);
+  const [isExtracting, setIsExtracting] = useState<boolean>(false);
+  const [extractionResult, setExtractionResult] = useState<ExtractedBillData | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showRawDetails, setShowRawDetails] = useState<boolean>(false);
+  const [consumerNumber, setConsumerNumber] = useState<string>('HT-SC-0392049182');
+  const [consumerName, setConsumerName] = useState<string>('Coimbatore Precision Auto Components & Foundry Ltd');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const processUploadedFile = async (file: File) => {
+    setUploadError(null);
+    setIsExtracting(true);
+    setUploadedFile({ name: file.name, size: file.size, type: file.type });
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const base64Content = reader.result as string;
+          const result = await api.extractBillData({
+            fileName: file.name,
+            fileType: file.type,
+            base64Content
+          });
+          applyExtractedData(result);
+        } catch (err: any) {
+          setUploadError(err.message || 'Failed to parse bill contents. Please review values manually.');
+        } finally {
+          setIsExtracting(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploadError('Unable to read selected file.');
+        setIsExtracting(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err: any) {
+      setUploadError(err.message || 'Error processing bill document.');
+      setIsExtracting(false);
+    }
+  };
+
+  const handleSampleSelect = async (presetKey: string) => {
+    setUploadError(null);
+    setIsExtracting(true);
+    try {
+      const result = await api.extractBillData({ samplePreset: presetKey });
+      setUploadedFile({
+        name: `${result.discomName.split(' ')[0]}_${result.consumerNumber}_Bill.pdf`,
+        size: 312000,
+        type: 'application/pdf'
+      });
+      applyExtractedData(result);
+    } catch (err: any) {
+      setUploadError(err.message || 'Failed to load sample bill.');
+    } finally {
+      setIsExtracting(false);
+    }
+  };
+
+  const applyExtractedData = (data: ExtractedBillData) => {
+    setExtractionResult(data);
+    setSelectedState(data.state);
+    setDiscomName(data.discomName);
+    setVoltageLevel(data.voltageLevel);
+    setContractDemandKva(data.contractDemandKva);
+    setMonthlyUnitsKwh(data.monthlyUnitsKwh);
+    setMonthlyEnergyChargeInr(data.monthlyEnergyChargeInr);
+    setMonthlyDemandChargeInr(data.monthlyDemandChargeInr);
+    setDerivedLandedTariff(data.derivedLandedTariff);
+    setConsumerNumber(data.consumerNumber);
+    setConsumerName(data.consumerName);
+  };
+
+  const clearUploadedBill = () => {
+    setUploadedFile(null);
+    setExtractionResult(null);
+    setUploadError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Stage 2: Landed Cost Engine Configuration
   const [commercialModel, setCommercialModel] = useState<'GROUP_CAPTIVE' | 'THIRD_PARTY_OPEN_ACCESS'>('GROUP_CAPTIVE');
@@ -247,11 +341,312 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
             </div>
           </div>
 
+          {/* ============================================================
+              AUTOMATED BILL UPLOAD & PARSER SECTION
+          ============================================================ */}
+          <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-slate-50 via-teal-50/20 to-slate-50 border border-teal-200/80 shadow-sm">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+              <div>
+                <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-teal-100 text-teal-800 uppercase tracking-wider mb-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Instant OCR & HT Bill Parser</span>
+                </div>
+                <h3 className="text-lg font-bold text-navy-900 brand-font">
+                  Upload Electricity Bill (PDF, JPG, PNG)
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Drop your latest High-Tension (HT) utility bill to instantly extract DISCOM, Contract Demand, Monthly Units, and Landed Cost.
+                </p>
+              </div>
+
+              {/* Reset button if extracted */}
+              {extractionResult && (
+                <button
+                  type="button"
+                  onClick={clearUploadedBill}
+                  className="inline-flex items-center space-x-1.5 text-xs text-slate-600 hover:text-red-600 font-semibold px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs hover:border-red-200 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Upload Another Bill</span>
+                </button>
+              )}
+            </div>
+
+            {/* Drag & Drop Upload Zone */}
+            {!extractionResult && !isExtracting && (
+              <div>
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files?.[0]) processUploadedFile(e.dataTransfer.files[0]);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-teal-300 hover:border-teal-500 rounded-xl p-6 text-center cursor-pointer bg-white hover:bg-teal-50/30 transition-all group"
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.[0]) processUploadedFile(e.target.files[0]);
+                    }}
+                  />
+                  <div className="w-12 h-12 mx-auto rounded-full bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600 group-hover:scale-110 transition-transform mb-3">
+                    <UploadCloud className="w-6 h-6" />
+                  </div>
+                  <div className="text-sm font-bold text-navy-900 mb-1">
+                    Click to browse or drag and drop your electricity bill
+                  </div>
+                  <div className="text-xs text-slate-500 mb-2">
+                    Supports high-tension utility bills in <span className="font-semibold text-slate-700">PDF, JPG, PNG, WEBP</span> (up to 15 MB)
+                  </div>
+                  <div className="inline-flex items-center space-x-2 text-[11px] text-teal-700 font-medium bg-teal-50 px-2.5 py-1 rounded-md border border-teal-100">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>Confidentiality Guaranteed: Used exclusively for landed cost simulation</span>
+                  </div>
+                </div>
+
+                {uploadError && (
+                  <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-600" />
+                    <span>{uploadError}</span>
+                  </div>
+                )}
+
+                {/* Quick Presets Bar */}
+                <div className="mt-4 pt-4 border-t border-slate-200/80">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <div className="text-xs font-bold text-slate-700 flex items-center space-x-1.5">
+                      <span>⚡ Or test immediately with authentic sample HT bills:</span>
+                    </div>
+                    <div className="flex items-center space-x-2 text-[11px]">
+                      <span className="text-slate-400">Download PDFs to test upload:</span>
+                      <a
+                        href="/samples/TANGEDCO_TamilNadu_HT1_SampleBill.pdf"
+                        download="TANGEDCO_TamilNadu_HT1_SampleBill.pdf"
+                        className="inline-flex items-center text-teal-700 hover:text-teal-900 font-semibold underline decoration-teal-300"
+                      >
+                        <Download className="w-3 h-3 mr-0.5" />
+                        TN PDF
+                      </a>
+                      <span className="text-slate-300">•</span>
+                      <a
+                        href="/samples/TSSPDCL_Telangana_HT1_SampleBill.pdf"
+                        download="TSSPDCL_Telangana_HT1_SampleBill.pdf"
+                        className="inline-flex items-center text-teal-700 hover:text-teal-900 font-semibold underline decoration-teal-300"
+                      >
+                        <Download className="w-3 h-3 mr-0.5" />
+                        TG PDF
+                      </a>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleSampleSelect('sample_tn_tangedco')}
+                      className="text-left p-2.5 rounded-lg border border-teal-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Tamil Nadu (TANGEDCO)</span>
+                        <span className="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded font-mono">Pilot</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">Coimbatore Precision Auto</div>
+                      <div className="text-[10px] text-teal-600 font-semibold mt-1">4,200 kVA • 850k kWh • ₹8.75/u</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSampleSelect('sample_tg_tsspdcl')}
+                      className="text-left p-2.5 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Telangana (TSSPDCL)</span>
+                        <span className="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded font-mono">Flagship</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">Hyderabad Bulk Drugs Ltd</div>
+                      <div className="text-[10px] text-teal-600 font-semibold mt-1">3,500 kVA • 720k kWh • ₹10.39/u</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSampleSelect('sample_gj_guvnl')}
+                      className="text-left p-2.5 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Gujarat (GUVNL/MGVCL)</span>
+                        <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">Western</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">Vadodara Castings LLP</div>
+                      <div className="text-[10px] text-teal-600 font-semibold mt-1">2,800 kVA • 540k kWh • ₹8.15/u</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSampleSelect('sample_mh_msedcl')}
+                      className="text-left p-2.5 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Maharashtra (MSEDCL)</span>
+                        <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">Western</span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">Pune Auto Forgings Ltd</div>
+                      <div className="text-[10px] text-teal-600 font-semibold mt-1">5,000 kVA • 1.10 MU • ₹9.80/u</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Scanning In Progress State */}
+            {isExtracting && (
+              <div className="p-8 text-center bg-white rounded-xl border border-teal-200">
+                <div className="relative w-16 h-16 mx-auto mb-4">
+                  <div className="w-16 h-16 rounded-full border-4 border-teal-100 border-t-teal-600 animate-spin flex items-center justify-center"></div>
+                  <Sparkles className="w-6 h-6 text-teal-600 absolute inset-0 m-auto animate-pulse" />
+                </div>
+                <div className="text-base font-bold text-navy-900 mb-1">
+                  Scanning HT Electricity Bill...
+                </div>
+                <div className="text-xs text-slate-600 max-w-md mx-auto">
+                  Extracting utility identifiers, contracted demand (CMD), active consumption, energy charges, and landed cost rate...
+                </div>
+              </div>
+            )}
+
+            {/* Extracted Bill Verification Card */}
+            {extractionResult && (
+              <div className="bg-white rounded-xl border border-teal-300 p-5 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center shadow-xs">
+                      <CheckCircle2 className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-bold text-navy-900">{extractionResult.consumerName}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800">
+                          {extractionResult.confidenceScore}% Confidence
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-500 font-mono mt-0.5">
+                        {extractionResult.consumerNumber} • {extractionResult.billingMonth} • {uploadedFile?.name}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowRawDetails(!showRawDetails)}
+                      className="inline-flex items-center space-x-1.5 text-xs text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg font-medium transition-colors border border-teal-200"
+                    >
+                      {showRawDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      <span>{showRawDetails ? 'Hide Extraction Trace' : 'View Extracted Fields'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4 Key Extracted Metrics Banner */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Jurisdiction</div>
+                    <div className="text-sm font-bold text-navy-900 mt-0.5">{extractionResult.state}</div>
+                    <div className="text-[11px] text-teal-700 truncate font-medium">{extractionResult.discomName.split(' ')[0]}</div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Contract Demand (CMD)</div>
+                    <div className="text-sm font-bold text-navy-900 mt-0.5">{extractionResult.contractDemandKva.toLocaleString('en-IN')} kVA</div>
+                    <div className="text-[11px] text-slate-500">~{(extractionResult.contractDemandKva / 1000).toFixed(2)} MW Peak</div>
+                  </div>
+
+                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-100">
+                    <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Monthly Units</div>
+                    <div className="text-sm font-bold text-navy-900 mt-0.5">{extractionResult.monthlyUnitsKwh.toLocaleString('en-IN')} kWh</div>
+                    <div className="text-[11px] text-slate-500">{(extractionResult.monthlyUnitsKwh / 1000000).toFixed(2)} MU / month</div>
+                  </div>
+
+                  <div className="p-3 bg-teal-50/70 rounded-lg border border-teal-200">
+                    <div className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">Landed Grid Tariff</div>
+                    <div className="text-sm font-extrabold text-teal-800 mt-0.5">₹{extractionResult.derivedLandedTariff.toFixed(2)} / kWh</div>
+                    <div className="text-[11px] text-teal-700 font-medium">₹{(extractionResult.totalBillInr / 100000).toFixed(1)}L / month</div>
+                  </div>
+                </div>
+
+                {/* Expandable Trace of Extracted Fields */}
+                {showRawDetails && (
+                  <div className="mt-4 pt-4 border-t border-slate-200">
+                    <div className="text-xs font-bold text-slate-800 mb-2 flex items-center space-x-1.5">
+                      <FileCode className="w-3.5 h-3.5 text-teal-600" />
+                      <span>Extracted Parameters & Regulatory Mapping:</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                      {extractionResult.extractedFields.map((field, idx) => (
+                        <div key={idx} className="p-2.5 rounded bg-slate-50 border border-slate-200/80 text-xs flex justify-between items-center">
+                          <div>
+                            <span className="font-semibold text-slate-700">{field.field}:</span>{' '}
+                            <span className="text-navy-900 font-bold">{field.value}</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-teal-700 bg-teal-100/70 px-1.5 py-0.5 rounded">
+                            {field.confidence}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    {extractionResult.rawTextPreview && (
+                      <div className="mt-2">
+                        <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Document OCR / Stream Snippet
+                        </div>
+                        <pre className="p-3 bg-slate-900 text-slate-200 rounded-lg text-[11px] font-mono whitespace-pre-wrap max-h-36 overflow-y-auto">
+                          {extractionResult.rawTextPreview}
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Consumer Name */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Consumer / Enterprise Name</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
+              </label>
+              <input
+                type="text"
+                value={consumerName}
+                onChange={(e) => setConsumerName(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 font-medium focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                placeholder="e.g. Coimbatore Precision Foundry Ltd"
+              />
+            </div>
+
+            {/* HT Service Number */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>HT Service / Connection No.</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
+              </label>
+              <input
+                type="text"
+                value={consumerNumber}
+                onChange={(e) => setConsumerNumber(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm text-slate-900 font-medium focus:ring-2 focus:ring-teal-500 focus:outline-none font-mono"
+                placeholder="e.g. HT-SC-0392049182"
+              />
+            </div>
+
             {/* Pilot State Selector */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                State / Jurisdiction <span className="text-teal-600 font-semibold">(Pilot Benchmarks)</span>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>State / Jurisdiction <span className="text-teal-600 font-semibold">(Pilot)</span></span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
               </label>
               <select
                 value={selectedState}
@@ -272,8 +667,9 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
 
             {/* Distribution Licensee */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Distribution Licensee (DISCOM)
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Distribution Licensee (DISCOM)</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
               </label>
               <select
                 value={discomName}
@@ -288,8 +684,9 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
 
             {/* Voltage Level */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Interconnection / Tariff Category
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Interconnection / Tariff Category</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
               </label>
               <select
                 value={voltageLevel}
@@ -304,8 +701,9 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
 
             {/* Contract Demand */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Contracted Maximum Demand (CMD)
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Contracted Maximum Demand (CMD)</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
               </label>
               <div className="relative">
                 <input
@@ -324,8 +722,9 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
 
             {/* Monthly Consumption */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Average Monthly Consumption
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Average Monthly Consumption</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
               </label>
               <div className="relative">
                 <input
@@ -344,8 +743,9 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
 
             {/* Monthly Energy Charges */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                Monthly Energy Charges (₹)
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span>Monthly Energy Charges (₹)</span>
+                {extractionResult && <span className="text-[10px] text-teal-600 font-semibold flex items-center"><Check className="w-3 h-3 mr-0.5" /> Extracted</span>}
               </label>
               <div className="relative">
                 <input
