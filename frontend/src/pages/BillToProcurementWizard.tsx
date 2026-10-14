@@ -445,12 +445,38 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                     <button
                       type="button"
+                      onClick={() => handleSampleSelect('sample_tn_hvf')}
+                      className="text-left p-2.5 rounded-lg border border-teal-300 hover:border-teal-500 bg-teal-50/30 hover:bg-teal-50/70 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Tamil Nadu (TNPDCL / HVF)</span>
+                        <span className="text-[10px] bg-teal-200 text-teal-900 px-1.5 py-0.5 rounded font-mono font-bold">Your Bill</span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-0.5 truncate font-medium">Heavy Vehicles Factory Avadi</div>
+                      <div className="text-[10px] text-teal-700 font-semibold mt-1">14,100 kVA • 1.81 MU • ₹14.00/u</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSampleSelect('sample_tg_floatglass')}
+                      className="text-left p-2.5 rounded-lg border border-teal-300 hover:border-teal-500 bg-teal-50/30 hover:bg-teal-50/70 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Telangana (TGSPDCL)</span>
+                        <span className="text-[10px] bg-teal-200 text-teal-900 px-1.5 py-0.5 rounded font-mono font-bold">Your Bill</span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-0.5 truncate font-medium">S R FLOAT GLASS (Nacharam)</div>
+                      <div className="text-[10px] text-teal-700 font-semibold mt-1">480 kVA • 31,226 kWh • ₹16.43/u</div>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleSampleSelect('sample_tn_tangedco')}
-                      className="text-left p-2.5 rounded-lg border border-teal-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
+                      className="text-left p-2.5 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
                     >
                       <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
                         <span>Tamil Nadu (TANGEDCO)</span>
-                        <span className="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded font-mono">Pilot</span>
+                        <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">Pilot</span>
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5 truncate">Coimbatore Precision Auto</div>
                       <div className="text-[10px] text-teal-600 font-semibold mt-1">4,200 kVA • 850k kWh • ₹8.75/u</div>
@@ -463,36 +489,10 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                     >
                       <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
                         <span>Telangana (TSSPDCL)</span>
-                        <span className="text-[10px] bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded font-mono">Flagship</span>
+                        <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">Flagship</span>
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5 truncate">Hyderabad Bulk Drugs Ltd</div>
                       <div className="text-[10px] text-teal-600 font-semibold mt-1">3,500 kVA • 720k kWh • ₹10.39/u</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSampleSelect('sample_gj_guvnl')}
-                      className="text-left p-2.5 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
-                    >
-                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
-                        <span>Gujarat (GUVNL/MGVCL)</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">Western</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">Vadodara Castings LLP</div>
-                      <div className="text-[10px] text-teal-600 font-semibold mt-1">2,800 kVA • 540k kWh • ₹8.15/u</div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSampleSelect('sample_mh_msedcl')}
-                      className="text-left p-2.5 rounded-lg border border-slate-200 hover:border-teal-400 bg-white hover:bg-teal-50/50 transition-all text-xs shadow-2xs group"
-                    >
-                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
-                        <span>Maharashtra (MSEDCL)</span>
-                        <span className="text-[10px] bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-mono">Western</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">Pune Auto Forgings Ltd</div>
-                      <div className="text-[10px] text-teal-600 font-semibold mt-1">5,000 kVA • 1.10 MU • ₹9.80/u</div>
                     </button>
                   </div>
                 </div>
