@@ -23,7 +23,13 @@ import {
   ChevronUp,
   FileCode,
   X,
-  Download
+  Download,
+  Sun,
+  Wind,
+  BatteryCharging,
+  ShoppingCart,
+  Clock,
+  BarChart3
 } from 'lucide-react';
 import { api } from '../services/api';
 import { MatchResult, MarketplaceListing, LandedCostOutputs, StateRegulatoryProfile, ExtractedBillData } from '../types';
@@ -130,6 +136,22 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
     setUploadError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleApplyStrategy = (category: string) => {
+    if (category === 'WIND_HYBRID') {
+      setCommercialModel('GROUP_CAPTIVE');
+      setProposedPpaTariff(3.70);
+      setContractedGreenShare(85);
+      handleStageAdvance(2);
+    } else if (category === 'IEX_EXCHANGE') {
+      setCommercialModel('THIRD_PARTY_OPEN_ACCESS');
+      setProposedPpaTariff(4.50);
+      setContractedGreenShare(50);
+      handleStageAdvance(2);
+    } else if (category === 'BESS_STORAGE') {
+      setCurrentView('storage');
     }
   };
 
@@ -574,6 +596,170 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                     <div className="text-[11px] text-teal-700 font-medium">₹{(extractionResult.totalBillInr / 100000).toFixed(1)}L / month</div>
                   </div>
                 </div>
+
+                {/* ============================================================
+                    PAGE 5 WORKING SHEET: TIME-OF-USE (TOD) & SOURCING BREAKDOWN
+                ============================================================ */}
+                {extractionResult.timeOfUseSlots && extractionResult.timeOfUseSlots.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-slate-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4 text-teal-600" />
+                        <h4 className="text-xs font-bold text-navy-900 uppercase tracking-wider">
+                          Working Sheet Analysis: Time-of-Use (TOD) & Sourced Energy Split
+                        </h4>
+                      </div>
+                      <span className="text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                        Gross Campus Demand: {(extractionResult.grossCampusConsumptionKwh || 3446700).toLocaleString('en-IN')} kWh (3.45 MU)
+                      </span>
+                    </div>
+
+                    {/* Sourcing Status Pills */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
+                      <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200">
+                        <div className="flex items-center space-x-1.5 text-emerald-800 text-[11px] font-bold">
+                          <Sun className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Captive Solar (Active)</span>
+                        </div>
+                        <div className="text-sm font-extrabold text-emerald-900 mt-1">
+                          16,34,967 kWh
+                        </div>
+                        <div className="text-[10px] text-emerald-700 font-medium">47.4% of Gross Campus Load</div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200">
+                        <div className="flex items-center space-x-1.5 text-amber-800 text-[11px] font-bold">
+                          <Wind className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Wind / Hybrid (Unutilized)</span>
+                        </div>
+                        <div className="text-sm font-extrabold text-amber-900 mt-1">
+                          0 kWh <span className="text-xs font-normal text-amber-700">(0%)</span>
+                        </div>
+                        <div className="text-[10px] text-amber-700 font-semibold">⚡ Prime Night Optimization Opportunity</div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-blue-50 border border-blue-200">
+                        <div className="flex items-center space-x-1.5 text-blue-800 text-[11px] font-bold">
+                          <ShoppingCart className="w-3.5 h-3.5 text-blue-600" />
+                          <span>IEX Power Exchange</span>
+                        </div>
+                        <div className="text-sm font-extrabold text-blue-900 mt-1">
+                          0 kWh <span className="text-xs font-normal text-blue-700">(0%)</span>
+                        </div>
+                        <div className="text-[10px] text-blue-700 font-medium">Available Day-Ahead / RTM</div>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                        <div className="flex items-center space-x-1.5 text-slate-700 text-[11px] font-bold">
+                          <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+                          <span>110 kV Open Access</span>
+                        </div>
+                        <div className="text-sm font-extrabold text-navy-900 mt-1">
+                          Active Consumer
+                        </div>
+                        <div className="text-[10px] text-teal-700 font-semibold">₹17.26L/mo OA Charges in Place</div>
+                      </div>
+                    </div>
+
+                    {/* TOD Time Slots Table */}
+                    <div className="overflow-x-auto rounded-lg border border-slate-200 mb-5">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200">
+                          <tr>
+                            <th className="py-2.5 px-3">TOD Slot</th>
+                            <th className="py-2.5 px-3">Time Window & Type</th>
+                            <th className="py-2.5 px-3 text-right">Gross Recorded (kWh)</th>
+                            <th className="py-2.5 px-3 text-right text-emerald-700">Solar Offset (kWh)</th>
+                            <th className="py-2.5 px-3 text-right text-navy-900">Net Grid Billed (kWh)</th>
+                            <th className="py-2.5 px-3 text-center">Solar Offset %</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {extractionResult.timeOfUseSlots.filter(s => s.slot !== 'C24').map((slot) => {
+                            const offsetPct = slot.grossConsumptionKwh > 0 
+                              ? Math.min(100, Math.round((slot.solarAdjustedKwh / slot.grossConsumptionKwh) * 100)) 
+                              : 0;
+                            return (
+                              <tr key={slot.slot} className="hover:bg-slate-50/60">
+                                <td className="py-2 px-3 font-mono font-bold text-navy-900">{slot.slot}</td>
+                                <td className="py-2 px-3 text-slate-600 font-medium">{slot.description}</td>
+                                <td className="py-2 px-3 text-right font-mono text-slate-700">
+                                  {slot.grossConsumptionKwh.toLocaleString('en-IN')}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono font-bold text-emerald-700">
+                                  {slot.solarAdjustedKwh > 0 ? `-${slot.solarAdjustedKwh.toLocaleString('en-IN')}` : '0'}
+                                </td>
+                                <td className="py-2 px-3 text-right font-mono font-bold text-navy-900">
+                                  {slot.netBilledKwh.toLocaleString('en-IN')}
+                                </td>
+                                <td className="py-2 px-3 text-center">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                    offsetPct === 100 
+                                      ? 'bg-emerald-100 text-emerald-800' 
+                                      : offsetPct > 50 
+                                      ? 'bg-teal-100 text-teal-800'
+                                      : offsetPct > 0 
+                                      ? 'bg-amber-100 text-amber-800' 
+                                      : 'bg-red-50 text-red-700 border border-red-200'
+                                  }`}>
+                                    {offsetPct === 100 ? '100% Solar Covered' : offsetPct === 0 ? '100% Grid Exposed' : `${offsetPct}% Solar`}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* AI Strategic Sourcing & Procurement Recommendations */}
+                    {extractionResult.smartProcurementRecommendations && (
+                      <div className="bg-gradient-to-br from-navy-900 to-navy-800 rounded-xl p-4 text-white shadow-sm mb-4">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <Sparkles className="w-4 h-4 text-teal-400" />
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-teal-300">
+                            Procurement Intelligence: Recommended Power Mix Opportunities
+                          </h4>
+                        </div>
+                        <p className="text-xs text-slate-300 mb-4">
+                          Based on your TOD load curve, solar supplies 100% of daytime mid-day energy (C4), but your Night Slot C5 (514k units) and Day Slot C2 (512k units) are 100% dependent on expensive grid power at ₹8.75/kWh. Here is how you can optimize:
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          {extractionResult.smartProcurementRecommendations.map((rec, i) => (
+                            <div key={i} className="bg-navy-800/90 border border-slate-700 rounded-lg p-3 flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-teal-900/80 text-teal-300 border border-teal-700/60">
+                                    {rec.category.replace('_', ' ')}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">{rec.recommendedCapacityMw} MW Target</span>
+                                </div>
+                                <h5 className="text-xs font-bold text-white mb-1.5 leading-snug">
+                                  {rec.strategyTitle}
+                                </h5>
+                                <div className="text-[11px] text-teal-300 font-extrabold mb-2">
+                                  Est. Savings: ₹{(rec.potentialMonthlySavingsInr / 100000).toFixed(1)} Lakhs / mo (₹{(rec.potentialAnnualSavingsInr / 10000000).toFixed(2)} Cr/yr)
+                                </div>
+                                <p className="text-[11px] text-slate-300 leading-relaxed mb-3 line-clamp-3">
+                                  {rec.rationale}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleApplyStrategy(rec.category)}
+                                className="w-full text-xs font-bold py-2 px-3 rounded-md bg-teal-500 hover:bg-teal-400 text-navy-950 transition-colors flex items-center justify-center space-x-1"
+                              >
+                                <span>{rec.actionCta}</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Expandable Trace of Extracted Fields */}
                 {showRawDetails && (

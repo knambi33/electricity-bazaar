@@ -270,6 +270,42 @@ export interface ExtractedBillField {
   sourceSnippet?: string;
 }
 
+export interface TimeOfUseSlot {
+  slot: string; // "C24", "C1", "C2", "C3", "C4", "C5"
+  description: string;
+  grossConsumptionKwh: number;
+  solarAdjustedKwh: number;
+  netBilledKwh: number;
+}
+
+export interface ExistingProcurementSource {
+  source: string;
+  adjustedKwh: number;
+  percentOfGross: number;
+  status: "ACTIVE" | "AVAILABLE_UNUTILIZED";
+}
+
+export interface OpenAccessChargesSummary {
+  transmissionChargesInr: number;
+  systemOperationChargesInr: number;
+  schedulingChargesInr: number;
+  dsmChargesInr: number;
+  totalOaChargesInr: number;
+  isExistingOpenAccessConsumer: boolean;
+}
+
+export interface SmartProcurementRecommendation {
+  strategyTitle: string;
+  category: "WIND_HYBRID" | "SOLAR_CAPTIVE" | "IEX_EXCHANGE" | "BESS_STORAGE";
+  recommendedCapacityMw: number;
+  targetTimeSlot: string;
+  unsuppliedKwhTarget: number;
+  potentialMonthlySavingsInr: number;
+  potentialAnnualSavingsInr: number;
+  rationale: string;
+  actionCta: string;
+}
+
 export interface ExtractedBillData {
   state: string;
   discomName: string;
@@ -281,6 +317,7 @@ export interface ExtractedBillData {
   contractDemandKva: number;
   recordedDemandKva?: number;
   monthlyUnitsKwh: number;
+  grossCampusConsumptionKwh?: number;
   monthlyEnergyChargeInr: number;
   monthlyDemandChargeInr: number;
   electricityDutyInr: number;
@@ -288,6 +325,11 @@ export interface ExtractedBillData {
   totalBillInr: number;
   derivedLandedTariff: number;
   confidenceScore: number;
+  powerFactor?: number;
+  timeOfUseSlots?: TimeOfUseSlot[];
+  existingProcurementSources?: ExistingProcurementSource[];
+  openAccessChargesSummary?: OpenAccessChargesSummary;
+  smartProcurementRecommendations?: SmartProcurementRecommendation[];
   extractedFields: ExtractedBillField[];
   rawTextPreview?: string;
 }
