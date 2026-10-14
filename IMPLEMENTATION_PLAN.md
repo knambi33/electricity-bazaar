@@ -21,13 +21,14 @@
   - Database migration script and realistic, clearly labelled seed data (`DEMO DATA — NOT A REAL OFFER`).
   - JWT authentication, password hashing, and role-based access control middleware.
   - Organization-level multi-tenancy scoping.
-- [ ] **Milestone 1.3: Core REST API Implementation**
+- [ ] **Milestone 1.3: Core REST API & Intelligence Engine Implementation**
   - Auth routes (`/register`, `/login`, `/me`).
   - Public Marketplace endpoints with multi-faceted filtering, search, and sorting.
   - Buyer requirement private submission and management.
   - Seller listing creation, drafting, and document attachment.
   - Deterministic matching engine endpoint (`/requirements/:id/matches`).
-  - Transparent Procurement Economics Calculator endpoint (`/calculator/evaluate`).
+  - Bill Diagnostics & Landed Cost Calculator endpoint (`/calculator/evaluate` and `/calculator/bill-decompose`).
+  - Pre-configured State Regulatory Profiles (Piloting **Telangana TSSPDCL/TGNPDCL** HT-I and HT-II tariff models, CSS, wheeling, and STU losses).
   - Enquiry creation and negotiation thread endpoints.
   - Admin review queue, listing moderation, and verification badge management.
 - [ ] **Milestone 1.4: Frontend SPA & Design System**
@@ -37,7 +38,7 @@
   - Public Homepage with search banner, featured listings, category cards, and "How It Works".
   - Marketplace Explorer with live tabs, multi-attribute filter sidebar, sort, and pagination.
   - Dedicated Listing Detail Page with technical specs, project stage, and enquiry modal.
-  - Buyer requirement submission wizard with load profile inputs.
+  - **The 4-Stage Bill-to-Procurement Wizard** (Bill diagnostic -> Landed cost simulation -> Supplier matching -> Side-by-side comparison).
   - Seller listing onboarding form with technical parameter capture.
   - Interactive Procurement Economics Calculator with dynamic charts and sensitivity tables.
   - Role-based dashboards for Buyer, Seller, and Admin.

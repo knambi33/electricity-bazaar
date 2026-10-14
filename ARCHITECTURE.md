@@ -21,9 +21,10 @@ Electricity Bazaar is architected as a modern, decoupled B2B multi-tenant web ap
 |                                                                                   |
 |  Modules:                                                                         |
 |  ├── Auth & Users          ├── Marketplace Listings      ├── Matching Engine      |
-|  ├── Organisations         ├── Buyer Requirements        ├── Economics Calculator |
-|  ├── Enquiries & Comms     ├── Storage & Tenders         ├── Verification Queue   |
-|  └── Audit Logger          ├── Document Metadata Mgr     ├── Admin & Moderation   |
+|  ├── Organisations         ├── Buyer Requirements        ├── Bill Diagnostics     |
+|  ├── Enquiries & Comms     ├── Storage & Tenders         ├── Economics Calculator |
+|  ├── Audit Logger          ├── Document Metadata Mgr     ├── Regulatory Engine    |
+|  └── Admin & Moderation    ├── Comparison Workspace      ├── Telangana Pilot Pack |
 +--------------------+------------------------------------+-------------------------+
                      |                                    |
           Prisma Client (Typed ORM)                 Presigned S3 / Cloud Storage
@@ -142,3 +143,14 @@ All configurations are injected via environment variables:
 - **ADR-001: Monorepo vs Multi-repo**: Adopted a clean monorepo with top-level `frontend/` and `backend/` directories to simplify shared TypeScript interfaces, maintain atomic commits, and enable unified CI/CD pipelines.
 - **ADR-002: Deterministic vs AI-based Matching**: Matching in Phase 1 is strictly deterministic based on rule criteria (Capacity fit, Location, Interconnection, Green Share, Tenure) to guarantee commercial transparency and eliminate black-box hallucinations.
 - **ADR-003: Landed-Cost Calculation Engine**: Built as a pure functional module with zero side effects, independently unit-tested with 100% boundary test coverage for all tariff, surcharge, and loss vectors.
+- **ADR-004: Bill-to-Procurement Intelligence Pipeline**: Rather than operating an isolated calculator, bill diagnostic inputs directly parameterize the procurement requirement and query the active supplier inventory, benchmarking against verified state tariff orders (piloting with Telangana TSERC TSSPDCL/TGNPDCL HT-I/HT-II tariffs).
+
+---
+
+## 7. The 4-Stage Bill-to-Procurement Pipeline
+
+1. **Stage 1 (Bill Diagnostics)**: Industrial consumer inputs DISCOM (e.g. TSSPDCL), voltage (11/33/132 kV), CMD (kVA), monthly units, energy charge, and demand charge. Derives true landed utility cost (e.g. ₹8.85/kWh).
+2. **Stage 2 (Landed Cost Engine)**: Evaluates Third-Party Open Access (with CSS, AS, wheeling, losses) vs Group Captive (0 CSS, 0 AS). Computes net potential savings.
+3. **Stage 3 (Supplier Matching)**: Instant query against active verified listings matching state, capacity, and technology.
+4. **Stage 4 (Comparison & Negotiation)**: Side-by-side comparison matrix and confidential enquiry initiation.
+
