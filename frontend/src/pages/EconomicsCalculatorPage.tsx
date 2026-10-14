@@ -18,10 +18,16 @@ import { LandedCostInputs, LandedCostOutputs, StateRegulatoryProfile } from '../
 export const EconomicsCalculatorPage: React.FC = () => {
   // Configurable Inputs with defaults matching Tamil Nadu launch customer benchmark
   const [selectedStatePreset, setSelectedStatePreset] = useState<string>('Tamil Nadu');
+  const [commercialModel, setCommercialModel] = useState<'GROUP_CAPTIVE' | 'THIRD_PARTY_OPEN_ACCESS' | 'IEX_EXCHANGE'>('GROUP_CAPTIVE');
   const [annualConsumptionKwh, setAnnualConsumptionKwh] = useState<number>(10200000); // 10.2 MU / yr
   const [currentLandedTariff, setCurrentLandedTariff] = useState<number>(8.75); // ₹8.75/kWh
   const [proposedEnergyTariff, setProposedEnergyTariff] = useState<number>(3.70); // ₹3.70/kWh
   const [contractedGreenSharePercent, setContractedGreenSharePercent] = useState<number>(85);
+
+  // Market Intermediation & Exchange Fees (IEX Specific)
+  const [exchangeFeePs, setExchangeFeePs] = useState<number>(2.0); // 2 ps / kWh base
+  const [traderMarginPs, setTraderMarginPs] = useState<number>(2.0); // Min 2 ps / kWh floor
+  const [ctuPOCChargePerKwh, setCtuPOCChargePerKwh] = useState<number>(0.38); // Inter-state CTU POC
 
   // Network & Regulatory Surcharges
   const [transmissionChargePerKwh, setTransmissionChargePerKwh] = useState<number>(0.34);
@@ -31,30 +37,51 @@ export const EconomicsCalculatorPage: React.FC = () => {
   const [bankingChargesPerKwh, setBankingChargesPerKwh] = useState<number>(0.28);
   const [stuLossPercent, setStuLossPercent] = useState<number>(3.9);
   const [ctuLossPercent, setCtuLossPercent] = useState<number>(0.0);
-  const [sldcAndSchedulingChargePerKwh, setSldcAndSchedulingChargePerKwh] = useState<number>(0.05);
+  const [baseSldcChargePerKwh, setBaseSldcChargePerKwh] = useState<number>(0.05);
 
   // Output
   const [results, setResults] = useState<LandedCostOutputs | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
-  const [isGroupCaptiveMode, setIsGroupCaptiveMode] = useState(true);
 
   // Load state preset charges
-  const applyStatePreset = async (stateName: string, isCaptive: boolean = true) => {
+  const applyStatePreset = async (
+    stateName: string, 
+    model: 'GROUP_CAPTIVE' | 'THIRD_PARTY_OPEN_ACCESS' | 'IEX_EXCHANGE' = commercialModel
+  ) => {
     setSelectedStatePreset(stateName);
-    setIsGroupCaptiveMode(isCaptive);
+    setCommercialModel(model);
     try {
       const profile = await api.getStateRates(stateName);
       const vData = profile.voltageLevels[0];
 
       setCurrentLandedTariff(vData.typicalIndustrialTariffRsPerKwh);
+      const isCaptive = model === 'GROUP_CAPTIVE';
+      const isIex = model === 'IEX_EXCHANGE';
+
+      if (isIex) {
+        if (proposedEnergyTariff === 3.70 || proposedEnergyTariff === 4.50) {
+          setProposedEnergyTariff(4.20);
+        }
+        setCtuLossPercent(3.2);
+        setCtuPOCChargePerKwh(0.38);
+      } else {
+        if (model === 'GROUP_CAPTIVE' && (proposedEnergyTariff === 4.20 || proposedEnergyTariff === 4.50)) {
+          setProposedEnergyTariff(3.70);
+        }
+        if (model === 'THIRD_PARTY_OPEN_ACCESS' && (proposedEnergyTariff === 4.20 || proposedEnergyTariff === 3.70)) {
+          setProposedEnergyTariff(4.50);
+        }
+        setCtuLossPercent(0);
+        setCtuPOCChargePerKwh(0);
+      }
+
       setTransmissionChargePerKwh(profile.transmissionChargeRsPerKwh);
       setWheelingChargePerKwh(vData.wheelingChargeRsPerKwh);
       setCrossSubsidySurchargePerKwh(isCaptive ? 0 : vData.crossSubsidySurchargeRsPerKwh);
       setAdditionalSurchargePerKwh(isCaptive ? 0 : profile.additionalSurchargeRsPerKwh);
       setBankingChargesPerKwh(profile.bankingChargesRsPerKwh);
       setStuLossPercent(vData.stuTransmissionLossPercent);
-      setCtuLossPercent(0);
-      setSldcAndSchedulingChargePerKwh(profile.sldcChargesRsPerKwh);
+      setBaseSldcChargePerKwh(profile.sldcChargesRsPerKwh);
     } catch (err) {
       console.error("Failed to load preset", err);
     }
@@ -63,24 +90,37 @@ export const EconomicsCalculatorPage: React.FC = () => {
   const runCalculation = async () => {
     setIsCalculating(true);
     try {
+      const isIex = commercialModel === 'IEX_EXCHANGE';
+      const isCaptive = commercialModel === 'GROUP_CAPTIVE';
+      
+      // IEX Fee: 2 ps/kWh (₹0.0200) + 18% GST (₹0.0036) = ₹0.0236/kWh
+      const iexWithGst = isIex ? ((exchangeFeePs / 100) * 1.18) : 0;
+      // Trader Margin: min 2 ps/kWh + 18% GST
+      const traderWithGst = isIex ? ((traderMarginPs / 100) * 1.18) : 0;
+      
+      const totalTransmission = transmissionChargePerKwh + (isIex ? ctuPOCChargePerKwh : 0);
+      const totalSldcAndIntermediation = baseSldcChargePerKwh + iexWithGst + traderWithGst;
+      const effectiveBanking = isIex ? 0 : bankingChargesPerKwh;
+      const effectiveCtuLoss = isIex ? 3.2 : ctuLossPercent;
+
       const inputs: LandedCostInputs = {
         annualConsumptionKwh,
         currentLandedTariff,
         proposedEnergyTariff,
-        transmissionChargePerKwh,
+        transmissionChargePerKwh: totalTransmission,
         wheelingChargePerKwh,
-        crossSubsidySurchargePerKwh,
-        additionalSurchargePerKwh,
-        bankingChargesPerKwh,
+        crossSubsidySurchargePerKwh: isCaptive ? 0 : crossSubsidySurchargePerKwh,
+        additionalSurchargePerKwh: isCaptive ? 0 : additionalSurchargePerKwh,
+        bankingChargesPerKwh: effectiveBanking,
         stuLossPercent,
-        ctuLossPercent,
-        sldcAndSchedulingChargePerKwh,
+        ctuLossPercent: effectiveCtuLoss,
+        sldcAndSchedulingChargePerKwh: totalSldcAndIntermediation,
         contractedGreenSharePercent
       };
       const res = await api.evaluateLandedCost(inputs);
       setResults(res);
     } catch (err: any) {
-      alert(`Calculation error: ${err.message}`);
+      console.error(`Calculation error: ${err.message}`);
     } finally {
       setIsCalculating(false);
     }
@@ -90,6 +130,7 @@ export const EconomicsCalculatorPage: React.FC = () => {
   useEffect(() => {
     runCalculation();
   }, [
+    commercialModel,
     annualConsumptionKwh,
     currentLandedTariff,
     proposedEnergyTariff,
@@ -100,18 +141,25 @@ export const EconomicsCalculatorPage: React.FC = () => {
     bankingChargesPerKwh,
     stuLossPercent,
     ctuLossPercent,
-    sldcAndSchedulingChargePerKwh,
+    baseSldcChargePerKwh,
+    exchangeFeePs,
+    traderMarginPs,
+    ctuPOCChargePerKwh,
     contractedGreenSharePercent
   ]);
 
   const exportCsv = () => {
     if (!results) return;
+    const isIex = commercialModel === 'IEX_EXCHANGE';
     const csvContent = "data:text/csv;charset=utf-8," + 
       "Parameter,Value,Unit\n" +
+      `Commercial Structure,${commercialModel},Model\n` +
       `Annual Consumption,${annualConsumptionKwh},kWh\n` +
       `Current Landed Tariff,${currentLandedTariff},INR/kWh\n` +
-      `Proposed Energy Tariff,${proposedEnergyTariff},INR/kWh\n` +
-      `Contracted Green Share,${contractedGreenSharePercent},%\n` +
+      `Proposed Energy Tariff / MCP,${proposedEnergyTariff},INR/kWh\n` +
+      (isIex ? `IEX Exchange Fee (with 18% GST),${((exchangeFeePs / 100) * 1.18).toFixed(4)},INR/kWh\n` : '') +
+      (isIex ? `Trader Margin (with 18% GST),${((traderMarginPs / 100) * 1.18).toFixed(4)},INR/kWh\n` : '') +
+      `Contracted Sourcing Share,${contractedGreenSharePercent},%\n` +
       `Blended Landed Tariff,${results.blendedLandedTariffPerKwh},INR/kWh\n` +
       `Cost Difference,${results.costDifferencePerKwh},INR/kWh\n` +
       `Annual Savings,${results.annualSavingsInr},INR\n` +
@@ -122,7 +170,7 @@ export const EconomicsCalculatorPage: React.FC = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Electricity_Bazaar_Economics_${selectedStatePreset}_${Date.now()}.csv`);
+    link.setAttribute("download", `Electricity_Bazaar_Economics_${selectedStatePreset}_${commercialModel}_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -183,7 +231,7 @@ export const EconomicsCalculatorPage: React.FC = () => {
           ].map(preset => (
             <button
               key={preset.name}
-              onClick={() => applyStatePreset(preset.name, isGroupCaptiveMode)}
+              onClick={() => applyStatePreset(preset.name, commercialModel)}
               className={`px-3 py-1.5 rounded-lg font-bold transition text-xs ${
                 selectedStatePreset === preset.name
                   ? 'bg-navy-900 text-teal-300 shadow-sm'
@@ -196,25 +244,33 @@ export const EconomicsCalculatorPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Structure Toggle: Group Captive vs Third Party */}
-      <div className="flex items-center space-x-4">
+      {/* Structure Toggle: Group Captive vs Third Party vs IEX Power Exchange */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Commercial Model:</span>
-        <div className="inline-flex p-1 bg-slate-200 rounded-xl text-xs font-bold">
+        <div className="inline-flex p-1 bg-slate-200 rounded-xl text-xs font-bold gap-1 flex-wrap">
           <button
-            onClick={() => applyStatePreset(selectedStatePreset, true)}
-            className={`px-4 py-1.5 rounded-lg transition ${
-              isGroupCaptiveMode ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            onClick={() => applyStatePreset(selectedStatePreset, 'GROUP_CAPTIVE')}
+            className={`px-3.5 py-1.5 rounded-lg transition ${
+              commercialModel === 'GROUP_CAPTIVE' ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Group Captive (0 CSS & 0 AS)
           </button>
           <button
-            onClick={() => applyStatePreset(selectedStatePreset, false)}
-            className={`px-4 py-1.5 rounded-lg transition ${
-              !isGroupCaptiveMode ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            onClick={() => applyStatePreset(selectedStatePreset, 'THIRD_PARTY_OPEN_ACCESS')}
+            className={`px-3.5 py-1.5 rounded-lg transition ${
+              commercialModel === 'THIRD_PARTY_OPEN_ACCESS' ? 'bg-navy-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Third-Party Open Access (Full CSS)
+          </button>
+          <button
+            onClick={() => applyStatePreset(selectedStatePreset, 'IEX_EXCHANGE')}
+            className={`px-3.5 py-1.5 rounded-lg transition ${
+              commercialModel === 'IEX_EXCHANGE' ? 'bg-blue-700 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            IEX Power Exchange (DAM/RTM)
           </button>
         </div>
       </div>
@@ -258,7 +314,7 @@ export const EconomicsCalculatorPage: React.FC = () => {
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-              Proposed Generation Ex-Bus Tariff (₹/kWh)
+              {commercialModel === 'IEX_EXCHANGE' ? 'IEX Market Clearing Price (MCP) (₹/kWh)' : 'Proposed Generation Ex-Bus Tariff (₹/kWh)'}
             </label>
             <input
               type="number"
@@ -267,12 +323,75 @@ export const EconomicsCalculatorPage: React.FC = () => {
               onChange={(e) => setProposedEnergyTariff(parseFloat(e.target.value))}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
             />
+            <span className="text-[10px] text-slate-400 mt-0.5 block">
+              {commercialModel === 'IEX_EXCHANGE' ? 'Average Day-Ahead / Real-Time clearing price on IEX' : 'Ex-busbar generation tariff from IPP/SPV'}
+            </span>
           </div>
+
+          {/* IEX & Electricity Trader Intermediation (with 18% GST) */}
+          {commercialModel === 'IEX_EXCHANGE' && (
+            <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl space-y-3">
+              <div className="flex items-center justify-between pb-1.5 border-b border-blue-200/60">
+                <span className="text-[11px] font-bold text-navy-900 uppercase tracking-wider">
+                  Exchange & Trader Intermediation (18% GST)
+                </span>
+                <span className="text-[10px] font-mono bg-blue-100 text-blue-800 font-bold px-1.5 py-0.5 rounded">
+                  +18% GST Mandated
+                </span>
+              </div>
+
+              {/* IEX Exchange Fee */}
+              <div>
+                <div className="flex justify-between items-center text-xs mb-1">
+                  <span className="text-[11px] font-bold text-slate-700">IEX Exchange Fee</span>
+                  <span className="text-xs font-mono font-bold text-blue-800">
+                    {exchangeFeePs.toFixed(1)} ps/u + 18% GST = ₹{((exchangeFeePs / 100) * 1.18).toFixed(4)}/kWh
+                  </span>
+                </div>
+                <div className="text-[10px] text-slate-500">
+                  Base: ₹{(exchangeFeePs / 100).toFixed(4)}/kWh • 18% GST: ₹{((exchangeFeePs / 100) * 0.18).toFixed(4)}/kWh
+                </div>
+              </div>
+
+              {/* Trader Margin */}
+              <div>
+                <div className="flex justify-between items-center text-xs mb-1">
+                  <span className="text-[11px] font-bold text-slate-700">Electricity Trader Margin</span>
+                  <span className="text-xs font-mono font-bold text-blue-800">
+                    {traderMarginPs.toFixed(1)} ps/u + 18% GST = ₹{((traderMarginPs / 100) * 1.18).toFixed(4)}/kWh
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="2.0"
+                  max="8.0"
+                  step="0.5"
+                  value={traderMarginPs}
+                  onChange={(e) => setTraderMarginPs(parseFloat(e.target.value))}
+                  className="w-full accent-blue-600 h-1.5 bg-blue-100 rounded-lg cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                  <span>2.0 ps (Min Floor)</span>
+                  <span>4.0 ps (Standard)</span>
+                  <span>8.0 ps</span>
+                </div>
+                <div className="text-[10px] text-slate-500 mt-1">
+                  Base: ₹{(traderMarginPs / 100).toFixed(4)}/kWh • 18% GST: ₹{((traderMarginPs / 100) * 0.18).toFixed(4)}/kWh
+                </div>
+              </div>
+
+              {/* Combined Intermediation Total */}
+              <div className="p-2 bg-white rounded-lg border border-blue-200 text-[11px] flex justify-between font-bold text-navy-950">
+                <span>Total Trading & Exchange Intermediation:</span>
+                <span className="text-blue-700 font-mono">₹{(((exchangeFeePs + traderMarginPs) / 100) * 1.18).toFixed(4)} / kWh</span>
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="flex justify-between items-center mb-1">
               <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                Renewable Replacement Share
+                {commercialModel === 'IEX_EXCHANGE' ? 'Exchange Procurement Share' : 'Renewable Replacement Share'}
               </label>
               <span className="text-xs font-bold text-teal-700">{contractedGreenSharePercent}%</span>
             </div>
@@ -406,6 +525,119 @@ export const EconomicsCalculatorPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Itemized Delivered Cost Breakdown Waterfall */}
+              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-sm font-bold text-navy-900 uppercase tracking-wider">
+                      Itemized Landed Cost Breakdown
+                    </h3>
+                    <span className={`text-[10px] px-2 py-0.5 rounded font-bold ${
+                      commercialModel === 'GROUP_CAPTIVE' 
+                        ? 'bg-teal-100 text-teal-800' 
+                        : commercialModel === 'IEX_EXCHANGE' 
+                        ? 'bg-blue-100 text-blue-800' 
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {commercialModel === 'GROUP_CAPTIVE' 
+                        ? 'Group Captive SPV' 
+                        : commercialModel === 'IEX_EXCHANGE' 
+                        ? 'IEX Power Exchange' 
+                        : 'Third-Party Open Access'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
+                    Loss Multiplier: {results.effectiveLossFactor}x
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  {/* Row 1: Energy / MCP Base */}
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">
+                      {commercialModel === 'IEX_EXCHANGE' 
+                        ? `IEX Clearing Price (MCP grossed up for CTU 3.2% + STU ${stuLossPercent}% losses)`
+                        : `Base Energy Tariff (Grossed up for STU ${stuLossPercent}% loss)`}
+                    </span>
+                    <span className="font-semibold text-slate-900">₹{results.openAccessEnergyTariffGrossedUp.toFixed(4)} / kWh</span>
+                  </div>
+
+                  {/* Row 2: IEX Fee (Only for IEX) */}
+                  {commercialModel === 'IEX_EXCHANGE' && (
+                    <div className="flex justify-between py-1.5 border-b border-slate-100">
+                      <span className="text-slate-600">IEX Exchange Fee (2.0 ps/kWh + 18% GST)</span>
+                      <span className="font-semibold text-slate-900">₹{((exchangeFeePs / 100) * 1.18).toFixed(4)} / kWh</span>
+                    </div>
+                  )}
+
+                  {/* Row 3: Trader Margin (Only for IEX) */}
+                  {commercialModel === 'IEX_EXCHANGE' && (
+                    <div className="flex justify-between py-1.5 border-b border-slate-100">
+                      <span className="text-slate-600">Electricity Trader Margin ({traderMarginPs.toFixed(1)} ps/kWh + 18% GST)</span>
+                      <span className="font-semibold text-slate-900">₹{((traderMarginPs / 100) * 1.18).toFixed(4)} / kWh</span>
+                    </div>
+                  )}
+
+                  {/* Row 4: CTU POC Transmission (Only for IEX) */}
+                  {commercialModel === 'IEX_EXCHANGE' && (
+                    <div className="flex justify-between py-1.5 border-b border-slate-100">
+                      <span className="text-slate-600">Inter-State CTU (POC) Transmission Charges</span>
+                      <span className="font-semibold text-slate-900">₹{ctuPOCChargePerKwh.toFixed(4)} / kWh</span>
+                    </div>
+                  )}
+
+                  {/* Row 5: STU Transmission & Wheeling */}
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">
+                      {commercialModel === 'IEX_EXCHANGE' ? 'Intra-State (STU) Transmission & Wheeling Charges' : 'State Transmission & Wheeling Charges'}
+                    </span>
+                    <span className="font-semibold text-slate-900">
+                      ₹{(transmissionChargePerKwh + wheelingChargePerKwh).toFixed(4)} / kWh
+                    </span>
+                  </div>
+
+                  {/* Row 6: Cross-Subsidy Surcharge (CSS) */}
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Cross-Subsidy Surcharge (CSS)</span>
+                    <span className={`font-semibold ${commercialModel === 'GROUP_CAPTIVE' ? 'text-teal-600' : 'text-slate-900'}`}>
+                      {commercialModel === 'GROUP_CAPTIVE' 
+                        ? '₹0.0000 (Statutory Exemption)' 
+                        : `₹${crossSubsidySurchargePerKwh.toFixed(4)} / kWh`}
+                    </span>
+                  </div>
+
+                  {/* Row 7: Additional Surcharge (AS) */}
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">Additional Surcharge (AS)</span>
+                    <span className={`font-semibold ${commercialModel === 'GROUP_CAPTIVE' ? 'text-teal-600' : 'text-slate-900'}`}>
+                      {commercialModel === 'GROUP_CAPTIVE' 
+                        ? '₹0.0000 (Exempt)' 
+                        : `₹${additionalSurchargePerKwh.toFixed(4)} / kWh`}
+                    </span>
+                  </div>
+
+                  {/* Row 8: Banking & SLDC */}
+                  <div className="flex justify-between py-1.5 border-b border-slate-100">
+                    <span className="text-slate-600">
+                      {commercialModel === 'IEX_EXCHANGE' 
+                        ? 'NLDC / RLDC / SLDC Operating & Scheduling Charges' 
+                        : 'Banking Charges & SLDC Scheduling'}
+                    </span>
+                    <span className="font-semibold text-slate-900">
+                      {commercialModel === 'IEX_EXCHANGE' 
+                        ? `₹${baseSldcChargePerKwh.toFixed(4)} / kWh`
+                        : `₹${(bankingChargesPerKwh + baseSldcChargePerKwh).toFixed(4)} / kWh`}
+                    </span>
+                  </div>
+
+                  {/* Total 100% Landed Cost */}
+                  <div className="flex justify-between py-2.5 bg-slate-50 font-bold text-slate-900 px-3 rounded-lg border border-slate-200 mt-2">
+                    <span>Total 100% {commercialModel === 'IEX_EXCHANGE' ? 'IEX Exchange' : commercialModel === 'GROUP_CAPTIVE' ? 'Group Captive' : 'Open Access'} Landed Cost</span>
+                    <span className="text-teal-700 text-sm">₹{results.totalOpenAccessLandedCostPerKwh.toFixed(2)} / kWh</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Annual Expenditure Comparison */}
               <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4">
                 <h3 className="text-sm font-bold text-navy-900 uppercase tracking-wider">
@@ -424,7 +656,9 @@ export const EconomicsCalculatorPage: React.FC = () => {
 
                   <div>
                     <div className="flex justify-between text-xs font-bold mb-1">
-                      <span className="text-teal-700">Proposed Sourcing Expenditure ({isGroupCaptiveMode ? 'Group Captive' : 'Open Access'})</span>
+                      <span className="text-teal-700">
+                        Proposed Sourcing Expenditure ({commercialModel === 'GROUP_CAPTIVE' ? 'Group Captive' : commercialModel === 'IEX_EXCHANGE' ? 'IEX Power Exchange' : 'Third-Party Open Access'})
+                      </span>
                       <span className="text-teal-700">₹{(results.proposedAnnualExpenditureInr / 10000000).toFixed(2)} Crores</span>
                     </div>
                     <div className="w-full bg-slate-200 h-3 rounded-full overflow-hidden">

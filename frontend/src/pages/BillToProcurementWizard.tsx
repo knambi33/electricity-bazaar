@@ -159,6 +159,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
   const [commercialModel, setCommercialModel] = useState<'GROUP_CAPTIVE' | 'THIRD_PARTY_OPEN_ACCESS' | 'IEX_EXCHANGE'>('GROUP_CAPTIVE');
   const [contractedGreenShare, setContractedGreenShare] = useState<number>(85);
   const [proposedPpaTariff, setProposedPpaTariff] = useState<number>(3.70);
+  const [traderMarginPs, setTraderMarginPs] = useState<number>(2.0); // Min 2 paise / kWh floor
   const [landedCostResults, setLandedCostResults] = useState<LandedCostOutputs | null>(null);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
 
@@ -218,9 +219,15 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
       const banking = isIex ? 0 : (stateProfile?.bankingChargesRsPerKwh || 0.28);
       const ctuLoss = isIex ? 3.2 : 0;
       const stuLoss = activeVoltageData?.stuTransmissionLossPercent || 3.9;
-      // For IEX, include CTU POC transmission charge (0.38) and exchange transaction fee (0.02)
+      
+      // IEX Fee: 2 ps/kWh (₹0.0200) + 18% GST (₹0.0036) = ₹0.0236/kWh
+      const iexFeeWithGst = isIex ? (0.02 * 1.18) : 0;
+      // Trader Margin: min 2 ps/kWh (₹0.0200) + 18% GST (₹0.0036) = ₹0.0236/kWh
+      const traderMarginWithGst = isIex ? ((traderMarginPs / 100) * 1.18) : 0;
+
+      // For IEX, include CTU POC transmission charge (0.38)
       const transmissionCharge = (stateProfile?.transmissionChargeRsPerKwh || 0.34) + (isIex ? 0.38 : 0);
-      const sldcAndScheduling = (stateProfile?.sldcChargesRsPerKwh || 0.05) + (isIex ? 0.02 : 0);
+      const sldcAndScheduling = (stateProfile?.sldcChargesRsPerKwh || 0.05) + iexFeeWithGst + traderMarginWithGst;
 
       const outputs = await api.evaluateLandedCost({
         annualConsumptionKwh: monthlyUnitsKwh * 12,
@@ -254,6 +261,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
     commercialModel,
     proposedPpaTariff,
     contractedGreenShare,
+    traderMarginPs,
     voltageLevel,
     selectedState,
     derivedLandedTariff,
@@ -1182,6 +1190,42 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                 </span>
               </div>
 
+              {/* Electricity Trader Margin Slider (Only for IEX) */}
+              {commercialModel === 'IEX_EXCHANGE' && (
+                <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-xl space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <label className="font-bold text-navy-900 uppercase tracking-wider text-[11px]">
+                      Electricity Trader Margin (Min 2 ps/u)
+                    </label>
+                    <span className="font-extrabold text-blue-700">{traderMarginPs.toFixed(1)} ps / kWh</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="2.0"
+                    max="8.0"
+                    step="0.5"
+                    value={traderMarginPs}
+                    onChange={(e) => setTraderMarginPs(parseFloat(e.target.value))}
+                    className="w-full accent-blue-600 h-1.5 bg-blue-100 rounded-lg cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                    <span>2.0 ps (Min Floor)</span>
+                    <span>4.0 ps (Advisory + Hedging)</span>
+                    <span>8.0 ps</span>
+                  </div>
+                  <div className="pt-2 border-t border-blue-200/60 text-[11px] text-blue-900 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Trader Margin + 18% GST:</span>
+                      <span className="font-mono font-bold">₹{((traderMarginPs / 100) * 1.18).toFixed(4)} / kWh</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Exchange Fee (2 ps) + 18% GST:</span>
+                      <span className="font-mono font-bold">₹{(0.02 * 1.18).toFixed(4)} / kWh</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Recalculate button */}
               <button
                 onClick={runEconomicsSimulation}
@@ -1270,12 +1314,20 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                       {/* Row 2: IEX Fee (Only for IEX) */}
                       {commercialModel === 'IEX_EXCHANGE' && (
                         <div className="flex justify-between py-1.5 border-b border-slate-100">
-                          <span className="text-slate-600">IEX Exchange Transaction & Settlement Fee</span>
-                          <span className="font-semibold text-slate-900">₹0.0200 / kWh</span>
+                          <span className="text-slate-600">IEX Exchange Fee (2.0 ps/kWh + 18% GST)</span>
+                          <span className="font-semibold text-slate-900">₹{(0.02 * 1.18).toFixed(4)} / kWh</span>
                         </div>
                       )}
 
-                      {/* Row 3: CTU POC Transmission (Only for IEX) */}
+                      {/* Row 3: Trader Margin (Only for IEX) */}
+                      {commercialModel === 'IEX_EXCHANGE' && (
+                        <div className="flex justify-between py-1.5 border-b border-slate-100">
+                          <span className="text-slate-600">Licensed Trader Margin ({traderMarginPs.toFixed(1)} ps/kWh + 18% GST)</span>
+                          <span className="font-semibold text-slate-900">₹{((traderMarginPs / 100) * 1.18).toFixed(4)} / kWh</span>
+                        </div>
+                      )}
+
+                      {/* Row 4: CTU POC Transmission (Only for IEX) */}
                       {commercialModel === 'IEX_EXCHANGE' && (
                         <div className="flex justify-between py-1.5 border-b border-slate-100">
                           <span className="text-slate-600">Inter-State CTU (POC) Transmission Charges</span>
@@ -1283,7 +1335,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                         </div>
                       )}
 
-                      {/* Row 4: STU Transmission & Wheeling */}
+                      {/* Row 5: STU Transmission & Wheeling */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
                         <span className="text-slate-600">
                           {commercialModel === 'IEX_EXCHANGE' ? 'Intra-State (STU) Transmission & Wheeling Charges' : 'State Transmission & Wheeling Charges'}
@@ -1293,7 +1345,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                         </span>
                       </div>
 
-                      {/* Row 5: Cross-Subsidy Surcharge (CSS) */}
+                      {/* Row 6: Cross-Subsidy Surcharge (CSS) */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
                         <span className="text-slate-600">Cross-Subsidy Surcharge (CSS)</span>
                         <span className={`font-semibold ${commercialModel === 'GROUP_CAPTIVE' ? 'text-teal-600' : 'text-slate-900'}`}>
@@ -1303,7 +1355,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                         </span>
                       </div>
 
-                      {/* Row 6: Additional Surcharge (AS) */}
+                      {/* Row 7: Additional Surcharge (AS) */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
                         <span className="text-slate-600">Additional Surcharge (AS)</span>
                         <span className={`font-semibold ${commercialModel === 'GROUP_CAPTIVE' ? 'text-teal-600' : 'text-slate-900'}`}>
@@ -1313,7 +1365,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                         </span>
                       </div>
 
-                      {/* Row 7: Banking & SLDC */}
+                      {/* Row 8: Banking & SLDC */}
                       <div className="flex justify-between py-1.5 border-b border-slate-100">
                         <span className="text-slate-600">
                           {commercialModel === 'IEX_EXCHANGE' 
