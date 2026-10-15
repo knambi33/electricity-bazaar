@@ -23,7 +23,15 @@ import {
   FileCheck,
   ChevronRight,
   Filter,
-  Search
+  Search,
+  UploadCloud,
+  FileText,
+  Download,
+  ExternalLink,
+  Layers,
+  Paperclip,
+  Check,
+  FileSpreadsheet
 } from 'lucide-react';
 import { api } from '../services/api';
 import { 
@@ -31,7 +39,9 @@ import {
   RooftopVendor, 
   RooftopCampaign, 
   RooftopProposal, 
-  RooftopApplicantType 
+  RooftopApplicantType,
+  ExtractedBillData,
+  EpcApplicationDossier
 } from '../types';
 
 interface RooftopSolarPageProps {
@@ -68,6 +78,12 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
   const [economics, setEconomics] = useState<RooftopEconomics>(INITIAL_RWA_ECONOMICS);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
 
+  // Bill Capture State
+  const [isExtractingBill, setIsExtractingBill] = useState<boolean>(false);
+  const [extractedBill, setExtractedBill] = useState<ExtractedBillData | null>(null);
+  const [uploadedBillFileName, setUploadedBillFileName] = useState<string | null>(null);
+  const [billNotice, setBillNotice] = useState<string | null>(null);
+
   // Vendor & Campaign Directory
   const [vendors, setVendors] = useState<RooftopVendor[]>([]);
   const [campaigns, setCampaigns] = useState<RooftopCampaign[]>([]);
@@ -81,9 +97,12 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
     fullName: '',
     phone: '',
     email: '',
-    apartmentName: '',
+    apartmentName: 'Greenwood Heights RWA',
     numberOfFlats: 64,
     ebConsumerNumber: '',
+    discomName: 'TANGEDCO (Tamil Nadu Generation & Distribution Corporation)',
+    tariffCategory: 'LT Tariff 1D (Apartment Common Services)',
+    sanctionedLoadKw: 45,
     preferredModel: 'CAPEX' as 'CAPEX' | 'RESCO_OPEX',
     notes: ''
   });
@@ -111,26 +130,46 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
   const [isSubmittingCampaign, setIsSubmittingCampaign] = useState<boolean>(false);
   const [campaignSuccessMsg, setCampaignSuccessMsg] = useState<string | null>(null);
 
-  // Default bills and roof area per persona
+  // Switch persona helper
   const handlePersonaChange = (type: RooftopApplicantType) => {
     setApplicantType(type);
     if (type === 'INDIVIDUAL') {
       setMonthlyBillInr(4500);
       setAvailableRoofAreaSqFt(400);
       setDesiredCapacityKw(undefined);
+      setProposalFormData(prev => ({
+        ...prev,
+        tariffCategory: 'LT Tariff 1A (Domestic)',
+        sanctionedLoadKw: 5
+      }));
     } else if (type === 'APARTMENT_OWNER') {
       setMonthlyBillInr(3500);
       setAvailableRoofAreaSqFt(250);
       setDesiredCapacityKw(undefined);
+      setProposalFormData(prev => ({
+        ...prev,
+        tariffCategory: 'LT Tariff 1A (Domestic Flat Meter)',
+        sanctionedLoadKw: 4
+      }));
     } else if (type === 'APARTMENT_RWA') {
-      setMonthlyBillInr(55000);
-      setAvailableRoofAreaSqFt(4500);
+      setMonthlyBillInr(45000);
+      setAvailableRoofAreaSqFt(3500);
       setDesiredCapacityKw(undefined);
-      setProposalFormData(prev => ({ ...prev, apartmentName: 'Greenwood Heights RWA' }));
+      setProposalFormData(prev => ({
+        ...prev,
+        apartmentName: prev.apartmentName || 'Greenwood Heights RWA',
+        tariffCategory: 'LT Tariff 1D (Common Services: Lifts, Pumps, STP)',
+        sanctionedLoadKw: 45
+      }));
     } else {
       setMonthlyBillInr(85000);
       setAvailableRoofAreaSqFt(6000);
       setDesiredCapacityKw(undefined);
+      setProposalFormData(prev => ({
+        ...prev,
+        tariffCategory: 'Commercial / Industrial LT',
+        sanctionedLoadKw: 75
+      }));
     }
   };
 
@@ -169,8 +208,8 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
           api.getRooftopVendors(),
           api.getRooftopCampaigns()
         ]);
-        setVendors(vList);
-        setCampaigns(cList);
+        setVendors(vList || []);
+        setCampaigns(cList || []);
       } catch (err) {
         console.error("Error loading rooftop data:", err);
       }
@@ -178,7 +217,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
     loadData();
   }, []);
 
-  // Filter vendors
+  // Filter vendors safely
   const filteredVendors = (vendors || []).filter(v => {
     const coveredDistricts = v.coveredDistricts || [];
     const specs = v.specialization || [];
@@ -200,6 +239,93 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
     return matchesDistrict && matchesSearch;
   });
 
+  // Handle Bill File Upload (PDF, PNG, JPG)
+  const handleBillFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsExtractingBill(true);
+    setBillNotice(null);
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      try {
+        const base64 = (reader.result as string).split(',')[1];
+        setUploadedBillFileName(file.name);
+
+        const extracted = await api.extractBillData({
+          fileName: file.name,
+          fileType: file.type,
+          base64Content: base64
+        });
+
+        applyExtractedBillData(extracted, file.name);
+      } catch (err: any) {
+        console.error("Bill extraction failed:", err);
+        setBillNotice(`Bill parsing note: ${err.message || 'Please check file format'}`);
+      } finally {
+        setIsExtractingBill(false);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Handle Sample Bill Preset Click
+  const handleSampleBillPreset = async (presetKey: 'sample_tn_rooftop_home' | 'sample_tn_rooftop_rwa') => {
+    setIsExtractingBill(true);
+    setBillNotice(null);
+    try {
+      const extracted = await api.extractBillData({ samplePreset: presetKey });
+      const sampleFileName = presetKey === 'sample_tn_rooftop_home' 
+        ? 'TANGEDCO_Home_LT1A_Bill_03125004981.pdf' 
+        : 'TANGEDCO_Greenwood_RWA_LT1D_Bill_02184012340.pdf';
+      setUploadedBillFileName(sampleFileName);
+      applyExtractedBillData(extracted, sampleFileName);
+    } catch (err: any) {
+      console.error("Sample bill failed:", err);
+      setBillNotice(`Failed to load preset: ${err.message}`);
+    } finally {
+      setIsExtractingBill(false);
+    }
+  };
+
+  // Apply Extracted Bill Data to Calculator & Proposal Form
+  const applyExtractedBillData = (extracted: ExtractedBillData, fileName: string) => {
+    setExtractedBill(extracted);
+
+    const isDomestic = extracted.tariffCategory?.toLowerCase().includes('1a') || 
+                       extracted.tariffCategory?.toLowerCase().includes('domestic') ||
+                       (extracted.contractDemandKva && extracted.contractDemandKva <= 10);
+    const isRwa = extracted.tariffCategory?.toLowerCase().includes('1d') || 
+                  extracted.consumerName?.toLowerCase().includes('rwa') ||
+                  extracted.consumerName?.toLowerCase().includes('association') ||
+                  extracted.consumerName?.toLowerCase().includes('apartment');
+
+    if (isRwa) {
+      setApplicantType('APARTMENT_RWA');
+      setAvailableRoofAreaSqFt(Math.max(2500, Math.round((extracted.contractDemandKva || 45) * 85)));
+    } else if (isDomestic) {
+      setApplicantType('INDIVIDUAL');
+      setAvailableRoofAreaSqFt(Math.max(350, Math.round((extracted.contractDemandKva || 5) * 85)));
+    }
+
+    if (extracted.totalBillInr > 0) {
+      setMonthlyBillInr(extracted.totalBillInr);
+    }
+
+    setProposalFormData(prev => ({
+      ...prev,
+      fullName: extracted.consumerName || prev.fullName,
+      ebConsumerNumber: extracted.consumerNumber || prev.ebConsumerNumber,
+      discomName: extracted.discomName || 'TANGEDCO',
+      tariffCategory: extracted.tariffCategory || prev.tariffCategory,
+      sanctionedLoadKw: extracted.contractDemandKva || prev.sanctionedLoadKw,
+      apartmentName: isRwa ? (extracted.consumerName || prev.apartmentName) : prev.apartmentName
+    }));
+
+    setBillNotice(`✓ TANGEDCO Bill Verified! Service #${extracted.consumerNumber || ''} with ${extracted.contractDemandKva || 0} kW sanctioned load.`);
+  };
+
   // Handle Proposal Submission
   const handleProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,13 +345,19 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
         district: city,
         apartmentName: proposalFormData.apartmentName || undefined,
         numberOfFlats: proposalFormData.numberOfFlats || undefined,
-        ebConsumerNumber: proposalFormData.ebConsumerNumber || undefined,
+        ebConsumerNumber: proposalFormData.ebConsumerNumber || extractedBill?.consumerNumber || undefined,
+        discomName: proposalFormData.discomName || extractedBill?.discomName || 'TANGEDCO',
+        tariffCategory: proposalFormData.tariffCategory || extractedBill?.tariffCategory || undefined,
+        sanctionedLoadKw: proposalFormData.sanctionedLoadKw || extractedBill?.contractDemandKva || undefined,
+        monthlyUnitsKwh: extractedBill?.monthlyUnitsKwh || undefined,
         monthlyBillInr,
         availableRoofAreaSqFt,
         roofType,
         desiredCapacityKw: economics?.capacityKw,
         preferredModel: proposalFormData.preferredModel,
         targetEpcVendorIds: selectedVendorForProposal ? [selectedVendorForProposal] : [],
+        billFileName: uploadedBillFileName || (extractedBill?.consumerNumber ? `TANGEDCO_Bill_${extractedBill.consumerNumber}.pdf` : undefined),
+        billFileType: 'application/pdf',
         notes: proposalFormData.notes
       });
       setSubmittedProposalResult(res);
@@ -286,16 +418,16 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 Rooftop Solar for <span className="text-amber-400">Homes</span>, <span className="text-teal-400">Apartments</span> & <span className="text-sky-400">RWAs</span>
               </h1>
               <p className="text-slate-300 text-base sm:text-lg max-w-3xl leading-relaxed">
-                Unlock direct subsidies up to <strong className="text-white">₹78,000 for independent homes</strong> and <strong className="text-white">₹18,000/kW for Apartment Resident Welfare Associations (RWAs)</strong> in Tamil Nadu. Calculate feasibility, connect with verified TANGEDCO-empanelled EPC vendors, and slash electricity tariffs to zero.
+                Unlock direct subsidies up to <strong className="text-white">₹78,000 for independent homes</strong> and <strong className="text-white">₹18,000/kW for Apartment Resident Welfare Associations (RWAs)</strong> in Tamil Nadu. Upload your electricity bill to simulate exact savings and share verified application dossiers with empanelled EPC contractors for PM Surya Ghar and TANGEDCO Net Metering filing.
               </p>
 
               <div className="pt-2 flex flex-wrap gap-3">
                 <a 
-                  href="#calculator-section"
+                  href="#bill-capture-section"
                   className="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-5 py-2.5 rounded-lg shadow-lg shadow-amber-500/20 text-sm flex items-center space-x-2 transition"
                 >
-                  <Calculator className="w-4 h-4" />
-                  <span>Calculate Feasibility & Subsidy</span>
+                  <UploadCloud className="w-4 h-4" />
+                  <span>Capture Bill & Auto-Calculate</span>
                 </a>
                 <a 
                   href="#campaigns-section"
@@ -332,9 +464,9 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <div className="text-[11px] text-slate-400 mt-1">21+ years of free electricity</div>
               </div>
               <div className="bg-navy-800/80 border border-slate-700/80 rounded-xl p-4 backdrop-blur-sm">
-                <div className="text-emerald-400 text-2xl font-black">5 Cities</div>
-                <div className="text-xs text-slate-300 font-semibold mt-0.5">Launch Coverage</div>
-                <div className="text-[11px] text-slate-400 mt-1">Coimbatore, Chennai, Madurai, Trichy, Salem</div>
+                <div className="text-emerald-400 text-2xl font-black">Fast-Track</div>
+                <div className="text-xs text-slate-300 font-semibold mt-0.5">EPC Portal Dossier</div>
+                <div className="text-[11px] text-slate-400 mt-1">Auto-files Surya Ghar & TANGEDCO</div>
               </div>
             </div>
           </div>
@@ -416,6 +548,177 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
               </div>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* NEW: Bill Capture & Auto-Feasibility Section */}
+      <div id="bill-capture-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <div className="inline-flex items-center space-x-2 bg-teal-50 text-teal-800 text-xs font-bold px-3 py-1 rounded-full border border-teal-200 mb-2">
+                <UploadCloud className="w-3.5 h-3.5 text-teal-600" />
+                <span>Smart Bill Capture & Subsidy Application Filing</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+                Upload Electricity Bill for Instant Sizing & EPC Portal Dossier
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
+                Capture your <strong>TANGEDCO / TSSPDCL</strong> bill (PDF, JPG, PNG). Our engine extracts your consumer number, sanctioned load, and units to calculate exact savings and packages a verified application dossier for the EPC to file on the <strong>PM Surya Ghar National Portal</strong> and <strong>TANGEDCO Net Metering Portal</strong>.
+              </p>
+            </div>
+
+            {/* Quick 1-Click Sample Bill Buttons */}
+            <div className="flex flex-wrap sm:flex-nowrap gap-2 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => handleSampleBillPreset('sample_tn_rooftop_home')}
+                disabled={isExtractingBill}
+                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+              >
+                <Home className="w-3.5 h-3.5 text-amber-600" />
+                <span>Try Sample Home Bill (5 kW)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSampleBillPreset('sample_tn_rooftop_rwa')}
+                disabled={isExtractingBill}
+                className="bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+              >
+                <Building2 className="w-3.5 h-3.5 text-teal-700" />
+                <span>Try Sample RWA Bill (45 kW)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Upload Dropzone & Processing Indicator */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-7">
+              <label className="border-2 border-dashed border-slate-300 hover:border-teal-500 rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition bg-slate-50/50 hover:bg-teal-50/20 group">
+                <input
+                  type="file"
+                  accept="application/pdf,image/png,image/jpeg"
+                  onChange={handleBillFileUpload}
+                  className="hidden"
+                />
+                <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center text-teal-600 group-hover:scale-110 transition mb-3 border border-slate-200">
+                  <UploadCloud className="w-6 h-6" />
+                </div>
+                <span className="font-bold text-sm text-slate-800">
+                  Click to Browse or Drag & Drop TANGEDCO / TSSPDCL Bill
+                </span>
+                <span className="text-xs text-slate-500 mt-1">
+                  Supports PDF, PNG, JPG (e.g. EB white meter card, online PDF receipt, or HT/LT bill)
+                </span>
+                {uploadedBillFileName && (
+                  <span className="inline-flex items-center space-x-1.5 bg-teal-100 text-teal-800 text-xs font-semibold px-3 py-1 rounded-full mt-3">
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>Attached: {uploadedBillFileName}</span>
+                  </span>
+                )}
+              </label>
+            </div>
+
+            <div className="md:col-span-5 space-y-3">
+              <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 text-xs space-y-2">
+                <div className="font-bold text-slate-800 flex items-center space-x-1.5">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Why Upload Your Electricity Bill?</span>
+                </div>
+                <ul className="space-y-1.5 text-slate-600 text-[11px]">
+                  <li className="flex items-start space-x-1.5">
+                    <span className="text-teal-600 font-bold">•</span>
+                    <span><strong>Accurate Sizing:</strong> Computes capacity matched to your sanctioned load and tier-3 peak consumption slabs.</span>
+                  </li>
+                  <li className="flex items-start space-x-1.5">
+                    <span className="text-teal-600 font-bold">•</span>
+                    <span><strong>PM Surya Ghar Portal Auto-Fill:</strong> The EPC uses verified Service No. to initiate your central DBT application.</span>
+                  </li>
+                  <li className="flex items-start space-x-1.5">
+                    <span className="text-teal-600 font-bold">•</span>
+                    <span><strong>TANGEDCO Net Metering Sanction:</strong> Pre-populates Technical Feasibility Report (TFR) for distribution circle clearance.</span>
+                  </li>
+                </ul>
+              </div>
+
+              {isExtractingBill && (
+                <div className="bg-teal-50 border border-teal-200 text-teal-800 p-3 rounded-xl flex items-center space-x-3 text-xs">
+                  <div className="w-5 h-5 border-2 border-teal-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <span>Analyzing Bill... Reading TANGEDCO Consumer ID, Connected Load & Units</span>
+                </div>
+              )}
+
+              {billNotice && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl flex items-center space-x-2 text-xs font-medium">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                  <span>{billNotice}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Extracted Bill Details Showcase Badge */}
+          {extractedBill && (
+            <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border border-emerald-300 rounded-2xl p-5 space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <span className="p-1.5 bg-emerald-600 text-white rounded-lg">
+                    <Check className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-slate-900">
+                      Verified Bill Data Attached for EPC Portal Filing
+                    </h4>
+                    <span className="text-xs text-slate-500">
+                      State: {extractedBill.state} • Discom: {extractedBill.discomName}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-bold bg-white text-emerald-700 px-3 py-1 rounded-lg border border-emerald-300">
+                  Service #{extractedBill.consumerNumber}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Consumer Name</span>
+                  <span className="font-bold text-xs text-slate-900 truncate block" title={extractedBill.consumerName}>
+                    {extractedBill.consumerName}
+                  </span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Sanctioned Load</span>
+                  <span className="font-bold text-xs text-teal-800">
+                    {extractedBill.contractDemandKva} kW
+                  </span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Tariff Category</span>
+                  <span className="font-bold text-xs text-slate-800 truncate block" title={extractedBill.tariffCategory}>
+                    {extractedBill.tariffCategory}
+                  </span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Monthly Units</span>
+                  <span className="font-bold text-xs text-amber-700">
+                    {extractedBill.monthlyUnitsKwh.toLocaleString('en-IN')} kWh
+                  </span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Monthly Bill</span>
+                  <span className="font-bold text-xs text-slate-900">
+                    ₹{extractedBill.totalBillInr.toLocaleString('en-IN')}
+                  </span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200/80">
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">Portal Status</span>
+                  <span className="font-bold text-[11px] text-emerald-700">
+                    Dossier Ready
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -726,7 +1029,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                         className="flex-1 bg-navy-900 hover:bg-navy-800 text-white font-bold py-3 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-2 transition shadow-sm"
                       >
                         <FileCheck className="w-4 h-4 text-teal-400" />
-                        <span>Forward Feasibility to Empanelled EPCs</span>
+                        <span>Forward Feasibility & Bill to Empanelled EPCs</span>
                       </button>
                       
                       {applicantType === 'APARTMENT_RWA' && (
@@ -1025,7 +1328,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
       {/* PROPOSAL MODAL */}
       {showProposalModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative my-8">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl relative my-8">
             <button
               onClick={() => {
                 setShowProposalModal(false);
@@ -1037,34 +1340,97 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
             </button>
 
             {submittedProposalResult ? (
-              <div className="space-y-5 text-center py-4">
-                <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle2 className="w-8 h-8" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-black text-slate-900">Proposal Successfully Forwarded!</h3>
-                  <div className="inline-block mt-2 bg-slate-100 text-slate-700 font-mono text-xs px-3 py-1 rounded-full font-bold">
+              <div className="space-y-6 py-2">
+                <div className="text-center space-y-2">
+                  <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8" />
+                  </div>
+                  <h3 className="text-2xl font-black text-slate-900">
+                    Application Dossier Generated & Forwarded!
+                  </h3>
+                  <div className="inline-block bg-slate-100 text-slate-800 font-mono text-xs px-3.5 py-1 rounded-full font-bold">
                     Proposal Code: {submittedProposalResult.proposal.proposalCode}
                   </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-xl p-4 text-left text-xs space-y-2 border border-slate-200">
-                  <div className="font-bold text-slate-800">Forwarded to Empanelled EPC Vendors:</div>
-                  {submittedProposalResult.forwardedVendors.map(v => (
-                    <div key={v.id} className="flex justify-between items-center p-2 bg-white rounded border border-slate-200">
-                      <div>
-                        <div className="font-bold text-slate-900">{v.tradeName}</div>
-                        <div className="text-[11px] text-slate-500">{v.registeredCity} • {v.phone}</div>
+                {/* EPC Application Dossier Breakdown Card */}
+                {submittedProposalResult.proposal.dossierForEpc && (
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+                      <div className="flex items-center space-x-2">
+                        <FileSpreadsheet className="w-5 h-5 text-teal-600" />
+                        <span className="font-extrabold text-sm text-slate-900">
+                          PM Surya Ghar & TANGEDCO Portal Filing Dossier
+                        </span>
                       </div>
-                      <span className="text-[10px] bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded">
-                        Lead Dispatched
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                        Ready for Portal Filing
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Consumer Name</span>
+                        <span className="font-bold text-slate-800">{submittedProposalResult.proposal.dossierForEpc.consumerName}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Service Connection No.</span>
+                        <span className="font-mono font-bold text-slate-800">{submittedProposalResult.proposal.dossierForEpc.consumerNumber}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Sanctioned Load</span>
+                        <span className="font-bold text-teal-700">{submittedProposalResult.proposal.dossierForEpc.sanctionedLoadKw} kW</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Proposed Capacity</span>
+                        <span className="font-bold text-amber-700">{submittedProposalResult.proposal.dossierForEpc.proposedPlantCapacityKw} kWp</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Central Subsidy</span>
+                        <span className="font-bold text-emerald-700">₹{submittedProposalResult.proposal.dossierForEpc.applicableCentralSubsidyInr.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold block">Bill Attachment</span>
+                        <span className="font-bold text-slate-700 flex items-center space-x-1">
+                          <Paperclip className="w-3 h-3 text-teal-600" />
+                          <span className="truncate">{submittedProposalResult.proposal.dossierForEpc.billFileName || 'Verified'}</span>
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-slate-200">
+                      <span className="text-[10px] text-slate-500 uppercase font-bold block mb-1.5">
+                        Portal Filing Checklist Dispatched to Empanelled EPC:
+                      </span>
+                      <div className="space-y-1">
+                        {submittedProposalResult.proposal.dossierForEpc.filingChecklist.map((item, idx) => (
+                          <div key={idx} className="flex items-start space-x-1.5 text-[11px] text-slate-700">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-white rounded-xl p-4 text-left text-xs space-y-2 border border-slate-200 shadow-sm">
+                  <div className="font-bold text-slate-800">Assigned Empanelled EPC Contractor(s):</div>
+                  {submittedProposalResult.forwardedVendors.map(v => (
+                    <div key={v.id} className="flex justify-between items-center p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+                      <div>
+                        <div className="font-bold text-slate-900">{v.name} ({v.tradeName})</div>
+                        <div className="text-[11px] text-slate-500">{v.registeredCity} • {v.phone} • {v.contactEmail}</div>
+                      </div>
+                      <span className="text-[10px] bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded border border-teal-200">
+                        Dossier Dispatched
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="text-xs text-slate-500 leading-relaxed">
-                  The vendor engineers will reach out to schedule a complimentary shadow analysis and structural terrace inspection in <strong className="text-slate-800">{city}</strong>.
+                <div className="text-xs text-slate-500 leading-relaxed text-center">
+                  The EPC engineer will review your terrace feasibility and file the technical feasibility report (TFR) on the TANGEDCO Portal within 48 hours.
                 </div>
 
                 <button
@@ -1072,9 +1438,9 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                     setShowProposalModal(false);
                     setSubmittedProposalResult(null);
                   }}
-                  className="w-full bg-navy-900 text-white font-bold py-2.5 rounded-xl text-sm"
+                  className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold py-3 rounded-xl text-sm transition shadow-sm"
                 >
-                  Done
+                  Close & View Dashboard
                 </button>
               </div>
             ) : (
@@ -1082,21 +1448,36 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <div>
                   <span className="text-[11px] font-mono uppercase text-teal-600 font-bold">
                     {selectedVendorForProposal 
-                      ? `Quote Request: ${vendors.find(v => v.id === selectedVendorForProposal)?.tradeName}` 
-                      : 'Request Site Survey & Quotes'}
+                      ? `Empanelled EPC: ${vendors.find(v => v.id === selectedVendorForProposal)?.tradeName}` 
+                      : 'Request Site Survey & Fast-Track Subsidy Filing'}
                   </span>
                   <h3 className="text-xl font-black text-slate-900 mt-0.5">
-                    {applicantType === 'APARTMENT_RWA' ? 'Apartment RWA Proposal Submission' : 'Rooftop Solar Site Survey'}
+                    {applicantType === 'APARTMENT_RWA' ? 'Apartment RWA Proposal & EPC Subsidy Dossier' : 'Rooftop Solar Proposal Submission'}
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
                     System Sizing: <strong className="text-slate-800">{economics?.capacityKw} kWp</strong> • City: <strong className="text-slate-800">{city}</strong>
                   </p>
                 </div>
 
-                <div className="space-y-3 pt-2">
+                {/* Attached Bill Notice */}
+                {(uploadedBillFileName || extractedBill) && (
+                  <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-3 flex items-center justify-between text-xs">
+                    <div className="flex items-center space-x-2">
+                      <Paperclip className="w-4 h-4 text-emerald-700" />
+                      <span className="text-emerald-900 font-bold">
+                        Attached Bill: {uploadedBillFileName || `TANGEDCO_${extractedBill?.consumerNumber}.pdf`}
+                      </span>
+                    </div>
+                    <span className="text-[10px] bg-emerald-600 text-white font-bold px-2 py-0.5 rounded">
+                      Verified
+                    </span>
+                  </div>
+                )}
+
+                <div className="space-y-3 pt-1">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Full Name of Applicant / Secretary *
+                      Full Name of Applicant / RWA Secretary *
                     </label>
                     <input
                       type="text"
@@ -1167,38 +1548,64 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        TANGEDCO EB Consumer Number (Optional)
+                        TANGEDCO EB Service Connection No.
                       </label>
                       <input
                         type="text"
                         placeholder="e.g. 03-125-004-981"
                         value={proposalFormData.ebConsumerNumber}
                         onChange={(e) => setProposalFormData({ ...proposalFormData, ebConsumerNumber: e.target.value })}
-                        className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                        className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none font-mono"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-700 mb-1">
-                        Commercial Model
+                        Sanctioned Connected Load (kW)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="e.g. 45"
+                        value={proposalFormData.sanctionedLoadKw}
+                        onChange={(e) => setProposalFormData({ ...proposalFormData, sanctionedLoadKw: Number(e.target.value) })}
+                        className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Commercial Financing Model
                       </label>
                       <select
                         value={proposalFormData.preferredModel}
                         onChange={(e) => setProposalFormData({ ...proposalFormData, preferredModel: e.target.value as any })}
-                        className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white"
+                        className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white font-medium"
                       >
-                        <option value="CAPEX">Direct CAPEX (Own & Avail Subsidy)</option>
-                        <option value="RESCO_OPEX">Zero-Capex RESCO (PPA at ₹5.50/unit)</option>
+                        <option value="CAPEX">Direct CAPEX (Own Asset & Claim Central DBT Subsidy)</option>
+                        <option value="RESCO_OPEX">Zero-Capex RESCO (PPA at ~₹5.50/unit, ₹0 Investment)</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-700 mb-1">
+                        Distribution Utility
+                      </label>
+                      <input
+                        type="text"
+                        readOnly
+                        value={proposalFormData.discomName}
+                        className="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-slate-100 text-slate-700"
+                      />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Additional Notes / Special Requirements
+                      Additional Notes / Special Roof Requirements
                     </label>
                     <textarea
                       rows={2}
-                      placeholder="e.g. Elevated structure needed to keep terrace usable for residents."
+                      placeholder="e.g. Elevated super-structure needed to keep terrace usable for residents."
                       value={proposalFormData.notes}
                       onChange={(e) => setProposalFormData({ ...proposalFormData, notes: e.target.value })}
                       className="w-full text-xs border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none"
@@ -1216,11 +1623,14 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     ) : (
                       <>
-                        <span>Submit & Forward to Verified EPCs</span>
+                        <span>Submit & Forward Application Dossier to Verified EPCs</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
+                  <p className="text-[10px] text-slate-500 text-center mt-2">
+                    Empanelled EPC will use these verified parameters to file your application on PM Surya Ghar and TANGEDCO portals.
+                  </p>
                 </div>
               </form>
             )}

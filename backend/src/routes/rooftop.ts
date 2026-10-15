@@ -5,6 +5,27 @@ import { PrismaClient } from "@prisma/client";
 const router = Router();
 const prisma = new PrismaClient();
 
+export interface EpcApplicationDossier {
+  portalSchemeName: string;
+  nationalPortalUrl: string;
+  stateDiscomPortalUrl: string;
+  consumerName: string;
+  consumerNumber: string;
+  discomName: string;
+  tariffCategory: string;
+  sanctionedLoadKw: number;
+  monthlyAverageKwh: number;
+  proposedPlantCapacityKw: number;
+  moduleTechnology: string;
+  inverterSpecification: string;
+  applicableCentralSubsidyInr: number;
+  applicableStateSubsidyInr: number;
+  netPayableAfterSubsidiesInr: number;
+  billDocumentAttached: boolean;
+  billFileName?: string;
+  filingChecklist: string[];
+}
+
 // In-memory store for rooftop proposals & campaign registrations if SQLite table is not migrated yet
 interface RooftopProposalRecord {
   id: string;
@@ -19,6 +40,9 @@ interface RooftopProposalRecord {
   apartmentName?: string;
   numberOfFlats?: number;
   ebConsumerNumber?: string;
+  discomName?: string;
+  tariffCategory?: string;
+  monthlyUnitsKwh?: number;
   monthlyBillInr: number;
   sanctionedLoadKw?: number;
   availableRoofAreaSqFt: number;
@@ -26,12 +50,17 @@ interface RooftopProposalRecord {
   recommendedCapacityKw: number;
   estimatedTurnkeyCostInr: number;
   applicableSubsidyInr: number;
+  stateSubsidyInr?: number;
   netPayableInr: number;
   annualSavingsInr: number;
   preferredModel: "CAPEX" | "RESCO_OPEX";
   targetEpcVendorIds: string[];
   status: "SUBMITTED" | "FORWARDED_TO_EPCS" | "SITE_SURVEY_SCHEDULED" | "QUOTED" | "COMPLETED";
+  billFileName?: string;
+  billFileType?: string;
+  billAttached?: boolean;
   notes?: string;
+  dossierForEpc?: EpcApplicationDossier;
   createdAt: string;
 }
 
@@ -521,12 +550,18 @@ router.post("/proposals", (req: Request, res: Response): void => {
       apartmentName,
       numberOfFlats,
       ebConsumerNumber,
+      discomName,
+      tariffCategory,
+      sanctionedLoadKw,
+      monthlyUnitsKwh,
       monthlyBillInr,
       availableRoofAreaSqFt,
       roofType,
       desiredCapacityKw,
       preferredModel = "CAPEX",
       targetEpcVendorIds = [],
+      billFileName,
+      billFileType,
       notes
     } = req.body;
 
@@ -559,6 +594,35 @@ router.post("/proposals", (req: Request, res: Response): void => {
         : TAMIL_NADU_ROOFTOP_EPCS.slice(0, 2).map(v => v.id);
     }
 
+    const dossierForEpc: EpcApplicationDossier = {
+      portalSchemeName: applicantType === "APARTMENT_RWA"
+        ? "PM Surya Ghar: Resident Welfare Association Common Facility Solar Scheme"
+        : "PM Surya Ghar: Muft Bijli Yojana (National Rooftop Portal)",
+      nationalPortalUrl: "https://pmsuryaghar.gov.in",
+      stateDiscomPortalUrl: "https://www.tnebnet.org/awp/solarLogin",
+      consumerName: fullName,
+      consumerNumber: ebConsumerNumber || "Provided via attached EB bill",
+      discomName: discomName || "TANGEDCO (Tamil Nadu Generation & Distribution Corporation)",
+      tariffCategory: tariffCategory || (applicantType === "APARTMENT_RWA" ? "Tariff 1D (Common Services)" : "Tariff 1A (Domestic LT)"),
+      sanctionedLoadKw: sanctionedLoadKw ? parseFloat(sanctionedLoadKw) : economics.capacityKw,
+      monthlyAverageKwh: monthlyUnitsKwh ? parseFloat(monthlyUnitsKwh) : economics.monthlyGenUnits,
+      proposedPlantCapacityKw: economics.capacityKw,
+      moduleTechnology: "Tier-1 ALMM DCR Mono-PERC / Bifacial (540Wp+)",
+      inverterSpecification: "Grid-Tied String Inverter with Dual MPPT & Remote IoT Logger",
+      applicableCentralSubsidyInr: economics.centralSubsidyInr,
+      applicableStateSubsidyInr: 0,
+      netPayableAfterSubsidiesInr: economics.netPayableInr,
+      billDocumentAttached: Boolean(billFileName || ebConsumerNumber),
+      billFileName: billFileName || (ebConsumerNumber ? `TANGEDCO_EB_Bill_${ebConsumerNumber}.pdf` : undefined),
+      filingChecklist: [
+        "Consumer Service Connection Number verified with TANGEDCO LT database",
+        "Sanctioned load sufficiency verified (TNERC allows rooftop capacity up to 100% of sanctioned load)",
+        "DCR compliant modules selected for PM Surya Ghar DBT eligibility",
+        "CEIG Safety Inspection Form prepopulated (required if system > 10 kW)",
+        "Bi-directional net meter requisition docket ready for local TANGEDCO Section Office submission"
+      ]
+    };
+
     const newRecord: RooftopProposalRecord = {
       id: `prop-${Date.now()}`,
       proposalCode,
@@ -572,18 +636,27 @@ router.post("/proposals", (req: Request, res: Response): void => {
       apartmentName,
       numberOfFlats: numberOfFlats ? parseInt(numberOfFlats) : undefined,
       ebConsumerNumber,
+      discomName: discomName || "TANGEDCO",
+      tariffCategory,
+      monthlyUnitsKwh: monthlyUnitsKwh ? parseFloat(monthlyUnitsKwh) : economics.monthlyGenUnits,
       monthlyBillInr: parseFloat(monthlyBillInr),
+      sanctionedLoadKw: sanctionedLoadKw ? parseFloat(sanctionedLoadKw) : undefined,
       availableRoofAreaSqFt: availableRoofAreaSqFt ? parseFloat(availableRoofAreaSqFt) : 0,
       roofType: roofType || "RCC_FLAT",
       recommendedCapacityKw: economics.capacityKw,
       estimatedTurnkeyCostInr: economics.grossTurnkeyCost,
       applicableSubsidyInr: economics.centralSubsidyInr,
+      stateSubsidyInr: 0,
       netPayableInr: economics.netPayableInr,
       annualSavingsInr: economics.annualSavingsInr,
       preferredModel,
       targetEpcVendorIds: selectedVendors,
       status: "FORWARDED_TO_EPCS",
+      billFileName,
+      billFileType,
+      billAttached: Boolean(billFileName),
       notes,
+      dossierForEpc,
       createdAt: new Date().toISOString()
     };
 

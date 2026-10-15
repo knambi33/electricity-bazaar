@@ -386,6 +386,27 @@ export interface RooftopCampaign {
   ctaText: string;
 }
 
+export interface EpcApplicationDossier {
+  portalSchemeName: string;
+  nationalPortalUrl: string;
+  stateDiscomPortalUrl: string;
+  consumerName: string;
+  consumerNumber: string;
+  discomName: string;
+  tariffCategory: string;
+  sanctionedLoadKw: number;
+  monthlyAverageKwh: number;
+  proposedPlantCapacityKw: number;
+  moduleTechnology: string;
+  inverterSpecification: string;
+  applicableCentralSubsidyInr: number;
+  applicableStateSubsidyInr: number;
+  netPayableAfterSubsidiesInr: number;
+  billDocumentAttached: boolean;
+  billFileName?: string;
+  filingChecklist: string[];
+}
+
 export interface RooftopProposal {
   id: string;
   proposalCode: string;
@@ -399,6 +420,9 @@ export interface RooftopProposal {
   apartmentName?: string;
   numberOfFlats?: number;
   ebConsumerNumber?: string;
+  discomName?: string;
+  tariffCategory?: string;
+  monthlyUnitsKwh?: number;
   monthlyBillInr: number;
   sanctionedLoadKw?: number;
   availableRoofAreaSqFt: number;
@@ -406,12 +430,17 @@ export interface RooftopProposal {
   recommendedCapacityKw: number;
   estimatedTurnkeyCostInr: number;
   applicableSubsidyInr: number;
+  stateSubsidyInr?: number;
   netPayableInr: number;
   annualSavingsInr: number;
   preferredModel: "CAPEX" | "RESCO_OPEX";
   targetEpcVendorIds: string[];
   status: "SUBMITTED" | "FORWARDED_TO_EPCS" | "SITE_SURVEY_SCHEDULED" | "QUOTED" | "COMPLETED";
+  billFileName?: string;
+  billFileType?: string;
+  billAttached?: boolean;
   notes?: string;
+  dossierForEpc?: EpcApplicationDossier;
   createdAt: string;
 }
 
