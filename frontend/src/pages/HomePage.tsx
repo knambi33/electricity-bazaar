@@ -11,6 +11,7 @@ import {
   BatteryCharging, 
   Cpu, 
   Building2, 
+  Home,
   FileCheck,
   CheckCircle2,
   Calendar,
@@ -275,6 +276,63 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
               <span>Launch Bill Wizard Now</span>
               <ArrowRight className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          NEW: ROOFTOP SOLAR & APARTMENT RWA HUB (TAMIL NADU PILOT)
+      ============================================================ */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-amber-500/10 via-teal-500/10 to-sky-500/10 rounded-3xl p-8 sm:p-10 border border-amber-500/30 shadow-md">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center space-x-2 bg-amber-500/20 text-amber-900 border border-amber-500/40 text-xs font-bold px-3 py-1 rounded-full">
+                <Sun className="w-3.5 h-3.5 text-amber-600 animate-spin" style={{ animationDuration: '10s' }} />
+                <span>Tamil Nadu Pilot Launch: Rooftop Solar & RWA Aggregation Hub</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-navy-950 brand-font">
+                Rooftop Solar for Homes, Apartments & Residents Welfare Associations (RWAs)
+              </h2>
+              <p className="text-slate-700 text-sm leading-relaxed">
+                Unlock central subsidies up to <strong className="text-slate-900">₹78,000 for independent homes</strong> and <strong className="text-slate-900">₹18,000 / kW for Apartment Associations (RWAs)</strong> under PM Surya Ghar. Connect directly with empanelled TANGEDCO EPC contractors across Coimbatore, Chennai, Madurai, Trichy, and Salem.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">PM Surya Ghar</span>
+                  <span className="font-extrabold text-amber-700">₹78,000 Direct DBT</span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Apartment RWAs</span>
+                  <span className="font-extrabold text-teal-700">₹18,000 / kW Subsidy</span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Average Payback</span>
+                  <span className="font-extrabold text-sky-700">3.2 - 3.8 Years</span>
+                </div>
+                <div className="bg-white/80 p-2.5 rounded-xl border border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-bold">Community Deals</span>
+                  <span className="font-extrabold text-emerald-700">15% Group Discount</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-2.5 sm:w-auto w-full">
+              <button
+                onClick={() => setCurrentView('rooftop')}
+                className="bg-navy-900 hover:bg-navy-800 text-white font-bold px-6 py-3.5 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-md"
+              >
+                <Sun className="w-4 h-4 text-amber-400" />
+                <span>Calculate Rooftop Savings & Subsidy</span>
+                <ArrowRight className="w-4 h-4 text-slate-300" />
+              </button>
+              <button
+                onClick={() => setCurrentView('rooftop')}
+                className="bg-white hover:bg-slate-50 text-slate-800 font-semibold px-6 py-3 rounded-xl text-xs text-center border border-slate-300 transition"
+              >
+                <span>View Empanelled TN EPC Contractors</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>

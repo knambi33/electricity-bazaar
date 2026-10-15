@@ -40,6 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'home', label: 'Home' },
     { id: 'marketplace', label: 'Marketplace' },
     { id: 'wizard', label: 'Bill-to-Power Wizard', highlight: true },
+    { id: 'rooftop', label: 'Rooftop Solar', badge: 'TN Pilot' },
     { id: 'calculator', label: 'Economics Calculator' },
     { id: 'storage', label: 'Storage (BESS/PSP)' },
     { id: 'tenders', label: 'Tenders' },
@@ -121,7 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 key={link.id}
                 onClick={() => setCurrentView(link.id)}
-                className={`px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all ${
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-semibold tracking-wide transition-all ${
                   currentView === link.id
                     ? 'bg-teal-500/20 text-teal-300 border border-teal-500/40 shadow-sm'
                     : link.highlight
@@ -129,7 +130,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'text-slate-300 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                {link.label}
+                <span>{link.label}</span>
+                {(link as any).badge && (
+                  <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded uppercase tracking-wider border border-emerald-500/40">
+                    {(link as any).badge}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -196,13 +202,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 setCurrentView(link.id);
                 setMobileMenuOpen(false);
               }}
-              className={`block w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
+              className={`flex items-center justify-between w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
                 currentView === link.id
                   ? 'bg-teal-600 text-white'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              {link.label}
+              <span>{link.label}</span>
+              {(link as any).badge && (
+                <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded uppercase tracking-wider border border-emerald-500/40">
+                  {(link as any).badge}
+                </span>
+              )}
             </button>
           ))}
           <div className="pt-3 border-t border-slate-800 flex flex-col space-y-2">

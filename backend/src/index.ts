@@ -10,6 +10,7 @@ import calculatorRoutes from "./routes/calculator";
 import enquiryRoutes from "./routes/enquiries";
 import tenderRoutes from "./routes/tenders";
 import adminRoutes from "./routes/admin";
+import rooftopRoutes from "./routes/rooftop";
 
 dotenv.config();
 
@@ -75,6 +76,7 @@ app.use("/api/v1/calculator", calculatorRoutes);
 app.use("/api/v1/enquiries", enquiryRoutes);
 app.use("/api/v1", tenderRoutes);
 app.use("/api/v1/admin", adminRoutes);
+app.use("/api/v1/rooftop", rooftopRoutes);
 
 // 404 handler
 app.use((req: Request, res: Response) => {

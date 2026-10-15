@@ -10,7 +10,13 @@ import {
   StateRegulatoryProfile,
   User,
   Organisation,
-  ExtractedBillData
+  ExtractedBillData,
+  RooftopEconomics,
+  RooftopVendor,
+  RooftopCampaign,
+  RooftopProposal,
+  CampaignSignup,
+  RooftopApplicantType
 } from "../types";
 
 const API_BASE = "/api/v1";
@@ -257,6 +263,47 @@ class ApiService {
     });
     const json = await res.json();
     return { data: json.data || [], meta: json.meta || {} };
+  }
+
+  // --- Rooftop Solar Module (Tamil Nadu Pilot) ---
+  async calculateRooftopEstimate(params: {
+    applicantType: RooftopApplicantType;
+    monthlyBillInr: number;
+    availableRoofAreaSqFt?: number;
+    desiredCapacityKw?: number;
+  }): Promise<RooftopEconomics> {
+    return this.request<RooftopEconomics>("/rooftop/estimate", {
+      method: "POST",
+      body: JSON.stringify(params)
+    });
+  }
+
+  async getRooftopVendors(params: { district?: string; search?: string } = {}): Promise<RooftopVendor[]> {
+    const query = new URLSearchParams(params as Record<string, string>).toString();
+    return this.request<RooftopVendor[]>(`/rooftop/vendors${query ? `?${query}` : ""}`);
+  }
+
+  async getRooftopCampaigns(): Promise<RooftopCampaign[]> {
+    return this.request<RooftopCampaign[]>("/rooftop/campaigns");
+  }
+
+  async createRooftopProposal(data: any): Promise<{ proposal: RooftopProposal; economics: RooftopEconomics; forwardedVendors: RooftopVendor[] }> {
+    return this.request<{ proposal: RooftopProposal; economics: RooftopEconomics; forwardedVendors: RooftopVendor[] }>("/rooftop/proposals", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+  }
+
+  async getRooftopProposals(params: { city?: string; applicantType?: string; phone?: string } = {}): Promise<RooftopProposal[]> {
+    const query = new URLSearchParams(params as Record<string, string>).toString();
+    return this.request<RooftopProposal[]>(`/rooftop/proposals${query ? `?${query}` : ""}`);
+  }
+
+  async registerRooftopCampaign(data: any): Promise<CampaignSignup> {
+    return this.request<CampaignSignup>("/rooftop/campaign-signup", {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
   }
 }
 

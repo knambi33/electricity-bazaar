@@ -11,6 +11,7 @@ import { SellPowerPage } from './pages/SellPowerPage';
 import { StorageMarketplacePage } from './pages/StorageMarketplacePage';
 import { TendersPage } from './pages/TendersPage';
 import { ServicesPage } from './pages/ServicesPage';
+import { RooftopSolarPage } from './pages/RooftopSolarPage';
 import { Dashboards } from './pages/Dashboards';
 import { AuthPages } from './pages/AuthPages';
 import { LegalPages } from './pages/LegalPages';
@@ -131,6 +132,10 @@ export const App: React.FC = () => {
             setCurrentView={setCurrentView}
             onSelectListing={handleSelectListing}
           />
+        )}
+
+        {currentView === 'rooftop' && (
+          <RooftopSolarPage setCurrentView={setCurrentView} />
         )}
 
         {currentView === 'calculator' && (

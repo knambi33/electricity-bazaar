@@ -333,3 +333,100 @@ export interface ExtractedBillData {
   extractedFields: ExtractedBillField[];
   rawTextPreview?: string;
 }
+
+export type RooftopApplicantType = "INDIVIDUAL" | "APARTMENT_OWNER" | "APARTMENT_RWA" | "COMMERCIAL";
+
+export interface RooftopEconomics {
+  capacityKw: number;
+  monthlyGenUnits: number;
+  annualGenUnits: number;
+  grossTurnkeyCost: number;
+  centralSubsidyInr: number;
+  netPayableInr: number;
+  monthlySavingsInr: number;
+  annualSavingsInr: number;
+  paybackYears: number;
+  lifetime25YrSavingsInr: number;
+  annualCo2MitigationTonnes: number;
+  subsidyProgram: string;
+}
+
+export interface RooftopVendor {
+  id: string;
+  name: string;
+  tradeName: string;
+  registeredCity: string;
+  coveredDistricts: string[];
+  experienceYears: number;
+  rooftopProjectsCompleted: number;
+  totalInstalledCapacityMw: number;
+  mnreEmpanelled: boolean;
+  tangedcoVendorRegistered: boolean;
+  specialization: string[];
+  rating: number;
+  reviewCount: number;
+  warrantyOffered: string;
+  turnkeyRatePerWattInr: number;
+  badge: string;
+  contactEmail: string;
+  phone: string;
+  headquarters: string;
+}
+
+export interface RooftopCampaign {
+  id: string;
+  title: string;
+  tagline: string;
+  targetAudience: string;
+  coverageArea: string;
+  validTill: string;
+  discountOffer: string;
+  highlights: string[];
+  subsidyScheme: string;
+  ctaText: string;
+}
+
+export interface RooftopProposal {
+  id: string;
+  proposalCode: string;
+  applicantType: RooftopApplicantType;
+  fullName: string;
+  phone: string;
+  email: string;
+  city: string;
+  district: string;
+  state: string;
+  apartmentName?: string;
+  numberOfFlats?: number;
+  ebConsumerNumber?: string;
+  monthlyBillInr: number;
+  sanctionedLoadKw?: number;
+  availableRoofAreaSqFt: number;
+  roofType: "RCC_FLAT" | "SLOPED_SHEET" | "TILED" | "OTHER";
+  recommendedCapacityKw: number;
+  estimatedTurnkeyCostInr: number;
+  applicableSubsidyInr: number;
+  netPayableInr: number;
+  annualSavingsInr: number;
+  preferredModel: "CAPEX" | "RESCO_OPEX";
+  targetEpcVendorIds: string[];
+  status: "SUBMITTED" | "FORWARDED_TO_EPCS" | "SITE_SURVEY_SCHEDULED" | "QUOTED" | "COMPLETED";
+  notes?: string;
+  createdAt: string;
+}
+
+export interface CampaignSignup {
+  id: string;
+  campaignId: string;
+  societyName: string;
+  associationRegNumber?: string;
+  secretaryName: string;
+  contactPhone: string;
+  contactEmail: string;
+  city: string;
+  numberOfUnits: number;
+  estimatedCommonAreaLoadKw: number;
+  preferredDateForOrientation: string;
+  status: "REGISTERED" | "ORIENTATION_SCHEDULED" | "EPC_PROPOSALS_PREPARED";
+  createdAt: string;
+}
