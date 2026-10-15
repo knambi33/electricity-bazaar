@@ -166,10 +166,24 @@ export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
     id: "cmp-tn-apt-01",
     title: "Tamil Nadu Apartment Solar Community Aggregation Campaign",
     slug: "tamil-nadu-apartment-solar-community-drive",
+    tagline: "Save 15% on Turnkey EPC + ₹18,000/kW PM Surya Ghar Subsidy for Common Areas",
+    bannerHighlight: "Save 15% on Turnkey EPC + ₹18,000/kW PM Surya Ghar Subsidy for Common Areas",
     targetAudience: "Apartment Owners & Resident Welfare Associations (RWAs)",
     region: "All Tamil Nadu (Chennai, Coimbatore, Madurai, Trichy, Salem)",
-    bannerHighlight: "Save 15% on Turnkey EPC + ₹18,000/kW PM Surya Ghar Subsidy for Common Areas",
+    coverageArea: "Chennai, Coimbatore, Madurai, Trichy, Salem",
+    discountOffer: "15% Group Discount",
+    validTill: "31 Dec 2026",
+    expiryDate: "2026-12-31",
+    subsidyScheme: "PM Surya Ghar: ₹18,000/kW for RWAs up to 500 kW",
+    ctaText: "Join RWA Campaign",
     description: "When 5 or more flat owners or your Apartment Association (RWA) signs up together, our Empanelled EPC partners offer bulk procurement discounts of ₹5,000/kW, plus free structural load assessments and priority TANGEDCO Net Metering liaisoning.",
+    highlights: [
+      "Bulk Pricing: 12% - 15% discount on Tier-1 turnkey solar installations.",
+      "PM Surya Ghar Subsidy: Up to ₹18,000 per kW for common utility meters (lifts, water pumps, lighting) up to 500 kW.",
+      "Free Society Energy Audit & Structural Load Testing worth ₹25,000.",
+      "Green Apartment Certification & Corporate CSR / Community Recognition.",
+      "₹10,000 Contribution to RWA Maintenance Corpus Fund upon commissioning."
+    ],
     benefits: [
       "Bulk Pricing: 12% - 15% discount on Tier-1 turnkey solar installations.",
       "PM Surya Ghar Subsidy: Up to ₹18,000 per kW for common utility meters (lifts, water pumps, lighting) up to 500 kW.",
@@ -178,7 +192,6 @@ export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
       "₹10,000 Contribution to RWA Maintenance Corpus Fund upon commissioning."
     ],
     status: "ACTIVE",
-    expiryDate: "2026-12-31",
     registeredSocietiesCount: 47,
     featuredBadge: "Flagship RWA Campaign"
   },
@@ -186,10 +199,24 @@ export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
     id: "cmp-tn-surya-02",
     title: "PM Surya Ghar: Muft Bijli Fast-Track Scheme for Individual Homes",
     slug: "pm-surya-ghar-fast-track-tamil-nadu",
+    tagline: "Guaranteed Central Subsidy up to ₹78,000 Direct to Bank Account (DBT)",
+    bannerHighlight: "Guaranteed Central Subsidy up to ₹78,000 Direct to Bank Account (DBT)",
     targetAudience: "Individual Homeowners & Villa Residents",
     region: "Tamil Nadu State-wide (TANGEDCO Domestic Tariff 1A)",
-    bannerHighlight: "Guaranteed Central Subsidy up to ₹78,000 Direct to Bank Account (DBT)",
+    coverageArea: "All Districts in Tamil Nadu",
+    discountOffer: "Up to ₹78,000 Direct Subsidy",
+    validTill: "30 Nov 2026",
+    expiryDate: "2026-11-30",
+    subsidyScheme: "PM Surya Ghar: Muft Bijli Yojana",
+    ctaText: "Apply Fast-Track Subsidy",
     description: "Full end-to-end liaisoning through our empanelled vendors for national portal registration, TANGEDCO bi-directional net meter sanction, CEIG inspection, and 7% Jan Samarth collateral-free green loans.",
+    highlights: [
+      "1 kW Rooftop: ₹30,000 Direct Central Subsidy (Net cost ~₹25,000)",
+      "2 kW Rooftop: ₹60,000 Direct Central Subsidy (Net cost ~₹50,000)",
+      "3 kW+ Rooftop: ₹78,000 Maximum Direct Central Subsidy (Net cost ~₹87,000)",
+      "Zero Electricity Bills: Generate ~360 - 450 units/month, slashing TANGEDCO bills to near ₹0.",
+      "Payback in under 3.5 years, followed by 20+ years of free green power."
+    ],
     benefits: [
       "1 kW Rooftop: ₹30,000 Direct Central Subsidy (Net cost ~₹25,000)",
       "2 kW Rooftop: ₹60,000 Direct Central Subsidy (Net cost ~₹50,000)",
@@ -198,7 +225,6 @@ export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
       "Payback in under 3.5 years, followed by 20+ years of free green power."
     ],
     status: "ACTIVE",
-    expiryDate: "2026-11-30",
     registeredSocietiesCount: 184,
     featuredBadge: "High Subsidy Drive"
   },
@@ -206,10 +232,23 @@ export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
     id: "cmp-tn-resco-03",
     title: "Zero-Capex RESCO Solar for Large Gated Societies (50 kW - 250 kW)",
     slug: "zero-capex-resco-apartment-tamil-nadu",
+    tagline: "Zero Upfront Investment. Buy Solar Energy at ₹4.90/unit instead of TANGEDCO ₹8.15/unit",
+    bannerHighlight: "Zero Upfront Investment. Buy Solar Energy at ₹4.90/unit instead of TANGEDCO ₹8.15/unit",
     targetAudience: "Large Residential Societies (100+ Flats) & Commercial Campuses",
     region: "Chennai & Coimbatore Urban Centers",
-    bannerHighlight: "Zero Upfront Investment. Buy Solar Energy at ₹4.90/unit instead of TANGEDCO ₹8.15/unit",
+    coverageArea: "Chennai & Coimbatore",
+    discountOffer: "₹0 Upfront Investment",
+    validTill: "31 Dec 2026",
+    expiryDate: "2026-12-31",
+    subsidyScheme: "RESCO Developer PPA at ₹4.90/unit",
+    ctaText: "Explore Zero-Capex RESCO",
     description: "Our certified RESCO developers install, own, and maintain the solar plant on your terrace for 20 years. The society only pays for the actual solar units consumed at a discounted tariff, delivering immediate monthly savings from Day 1 without touching the association's reserve funds.",
+    highlights: [
+      "₹0 Capital Investment required from the society or flat owners.",
+      "Guaranteed ~40% discount on TANGEDCO Tariff 1D common service rate.",
+      "Comprehensive 20-year maintenance, cleaning, and equipment insurance managed by the developer.",
+      "Option to acquire the asset at nominal salvage cost at Year 15 or Year 20."
+    ],
     benefits: [
       "₹0 Capital Investment required from the society or flat owners.",
       "Guaranteed ~40% discount on TANGEDCO Tariff 1D common service rate.",
@@ -217,7 +256,6 @@ export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
       "Option to acquire the asset at nominal salvage cost at Year 15 or Year 20."
     ],
     status: "ACTIVE",
-    expiryDate: "2026-12-31",
     registeredSocietiesCount: 19,
     featuredBadge: "Zero Upfront Cost"
   }

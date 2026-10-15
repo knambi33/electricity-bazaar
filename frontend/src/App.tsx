@@ -15,6 +15,7 @@ import { RooftopSolarPage } from './pages/RooftopSolarPage';
 import { Dashboards } from './pages/Dashboards';
 import { AuthPages } from './pages/AuthPages';
 import { LegalPages } from './pages/LegalPages';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { api } from './services/api';
 import { User, Organisation } from './types';
 
@@ -104,12 +105,13 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1">
-        {currentView === 'home' && (
-          <HomePage
-            setCurrentView={setCurrentView}
-            onSelectListing={handleSelectListing}
-          />
-        )}
+        <ErrorBoundary onReset={() => setCurrentView('home')}>
+          {currentView === 'home' && (
+            <HomePage
+              setCurrentView={setCurrentView}
+              onSelectListing={handleSelectListing}
+            />
+          )}
 
         {currentView === 'marketplace' && (
           <MarketplaceExplorer
@@ -214,6 +216,7 @@ export const App: React.FC = () => {
             setCurrentView={setCurrentView}
           />
         )}
+        </ErrorBoundary>
       </main>
 
       <Footer setCurrentView={(view) => {

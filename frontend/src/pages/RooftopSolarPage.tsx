@@ -38,6 +38,21 @@ interface RooftopSolarPageProps {
   setCurrentView: (view: string) => void;
 }
 
+const INITIAL_RWA_ECONOMICS: RooftopEconomics = {
+  capacityKw: 35,
+  monthlyGenUnits: 4375,
+  annualGenUnits: 52500,
+  grossTurnkeyCost: 1890000,
+  centralSubsidyInr: 630000,
+  netPayableInr: 1260000,
+  monthlySavingsInr: 35656,
+  annualSavingsInr: 427875,
+  paybackYears: 2.9,
+  lifetime25YrSavingsInr: 9627188,
+  annualCo2MitigationTonnes: 43.1,
+  subsidyProgram: "PM Surya Ghar: RWA Common Area Facility (₹18,000 / kW up to 500 kW)"
+};
+
 export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentView }) => {
   // Active Persona
   const [applicantType, setApplicantType] = useState<RooftopApplicantType>('APARTMENT_RWA');
@@ -50,7 +65,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
   const [city, setCity] = useState<string>('Coimbatore');
 
   // Economics Results
-  const [economics, setEconomics] = useState<RooftopEconomics | null>(null);
+  const [economics, setEconomics] = useState<RooftopEconomics>(INITIAL_RWA_ECONOMICS);
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
 
   // Vendor & Campaign Directory
@@ -164,16 +179,23 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
   }, []);
 
   // Filter vendors
-  const filteredVendors = vendors.filter(v => {
+  const filteredVendors = (vendors || []).filter(v => {
+    const coveredDistricts = v.coveredDistricts || [];
+    const specs = v.specialization || [];
+    const vCity = v.registeredCity || '';
+    const name = v.name || '';
+    const tradeName = v.tradeName || '';
+
     const matchesDistrict = selectedDistrictFilter === 'ALL' || 
-      v.registeredCity.toLowerCase() === selectedDistrictFilter.toLowerCase() ||
-      v.coveredDistricts.some(d => d.toLowerCase() === selectedDistrictFilter.toLowerCase());
+      vCity.toLowerCase().includes(selectedDistrictFilter.toLowerCase()) ||
+      coveredDistricts.some(d => d.toLowerCase().includes(selectedDistrictFilter.toLowerCase()));
     
-    const matchesSearch = !vendorSearchQuery ||
-      v.name.toLowerCase().includes(vendorSearchQuery.toLowerCase()) ||
-      v.tradeName.toLowerCase().includes(vendorSearchQuery.toLowerCase()) ||
-      v.registeredCity.toLowerCase().includes(vendorSearchQuery.toLowerCase()) ||
-      v.specialization.some(s => s.toLowerCase().includes(vendorSearchQuery.toLowerCase()));
+    const q = vendorSearchQuery ? vendorSearchQuery.toLowerCase().trim() : '';
+    const matchesSearch = !q ||
+      name.toLowerCase().includes(q) ||
+      tradeName.toLowerCase().includes(q) ||
+      vCity.toLowerCase().includes(q) ||
+      specs.some(s => s.toLowerCase().includes(q));
 
     return matchesDistrict && matchesSearch;
   });
@@ -604,8 +626,8 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                         <div className="text-xl font-black text-emerald-700 mt-1">
                           - ₹{economics.centralSubsidyInr.toLocaleString('en-IN')}
                         </div>
-                        <span className="text-[11px] text-emerald-600 mt-0.5 block truncate" title={economics.subsidyProgram}>
-                          {economics.subsidyProgram.split(':')[0]}
+                        <span className="text-[11px] text-emerald-600 mt-0.5 block truncate" title={economics.subsidyProgram || 'PM Surya Ghar'}>
+                          {(economics.subsidyProgram || 'PM Surya Ghar: Subsidy').split(':')[0]}
                         </span>
                       </div>
 
@@ -768,11 +790,11 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
 
                 <div>
                   <h3 className="font-extrabold text-base text-slate-900 leading-snug">{camp.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1">{camp.tagline}</p>
+                  <p className="text-xs text-slate-500 mt-1">{camp.tagline || (camp as any).bannerHighlight}</p>
                 </div>
 
                 <div className="space-y-2 pt-2 border-t border-slate-100">
-                  {camp.highlights.map((h, idx) => (
+                  {((camp.highlights || (camp as any).benefits || []) as string[]).map((h, idx) => (
                     <div key={idx} className="flex items-start space-x-2 text-xs text-slate-700">
                       <CheckCircle2 className="w-3.5 h-3.5 text-teal-600 flex-shrink-0 mt-0.5" />
                       <span>{h}</span>
@@ -783,11 +805,11 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-[11px] space-y-1">
                   <div className="flex justify-between text-slate-500">
                     <span>Coverage:</span>
-                    <span className="font-semibold text-slate-800">{camp.coverageArea}</span>
+                    <span className="font-semibold text-slate-800">{camp.coverageArea || (camp as any).region || 'Tamil Nadu'}</span>
                   </div>
                   <div className="flex justify-between text-slate-500">
                     <span>Valid Till:</span>
-                    <span className="font-semibold text-slate-800">{camp.validTill}</span>
+                    <span className="font-semibold text-slate-800">{camp.validTill || (camp as any).expiryDate || 'Active'}</span>
                   </div>
                 </div>
               </div>
@@ -800,7 +822,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                   }}
                   className="w-full bg-navy-900 hover:bg-navy-800 text-white font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition"
                 >
-                  <span>{camp.ctaText}</span>
+                  <span>{camp.ctaText || 'Join Campaign'}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -895,7 +917,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <div className="text-xs space-y-1">
                   <div className="text-slate-400 text-[11px] font-medium">Covered Districts:</div>
                   <div className="flex flex-wrap gap-1">
-                    {vendor.coveredDistricts.map((d, i) => (
+                    {(vendor.coveredDistricts || []).map((d, i) => (
                       <span key={i} className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
                         {d}
                       </span>
@@ -907,7 +929,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <div className="text-xs space-y-1">
                   <div className="text-slate-400 text-[11px] font-medium">Specialization:</div>
                   <div className="flex flex-wrap gap-1">
-                    {vendor.specialization.map((s, i) => (
+                    {(vendor.specialization || []).map((s, i) => (
                       <span key={i} className="text-[10px] bg-sky-50 text-sky-800 px-2 py-0.5 rounded border border-sky-100 font-medium">
                         {s}
                       </span>
