@@ -244,8 +244,13 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 45 * 1024 * 1024) {
+      setBillNotice("File size exceeds 45MB limit. Please upload a PDF or image under 45MB.");
+      return;
+    }
+
     setIsExtractingBill(true);
-    setBillNotice(null);
+    setBillNotice("Scanning and extracting electricity bill parameters with OCR engine...");
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -277,7 +282,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
     try {
       const extracted = await api.extractBillData({ samplePreset: presetKey });
       const sampleFileName = presetKey === 'sample_tn_rooftop_home' 
-        ? 'TANGEDCO_Home_LT1A_Bill_03125004981.pdf' 
+        ? 'TANGEDCO_Home_LT1A_Bill_020010131017.pdf' 
         : 'TANGEDCO_Greenwood_RWA_LT1D_Bill_02184012340.pdf';
       setUploadedBillFileName(sampleFileName);
       applyExtractedBillData(extracted, sampleFileName);
@@ -309,8 +314,13 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
       setAvailableRoofAreaSqFt(Math.max(350, Math.round((extracted.contractDemandKva || 5) * 85)));
     }
 
+    const isBiMonthly = extracted.billingMonth?.toLowerCase().includes('bi-monthly') ||
+                        extracted.tariffCategory?.toLowerCase().includes('1a');
+
     if (extracted.totalBillInr > 0) {
-      setMonthlyBillInr(extracted.totalBillInr);
+      // For bi-monthly residential bills, calculate monthly average for the calculator slider
+      const monthlyEquivalent = isBiMonthly ? Math.round(extracted.totalBillInr / 2) : extracted.totalBillInr;
+      setMonthlyBillInr(monthlyEquivalent);
     }
 
     setProposalFormData(prev => ({
@@ -323,7 +333,10 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
       apartmentName: isRwa ? (extracted.consumerName || prev.apartmentName) : prev.apartmentName
     }));
 
-    setBillNotice(`✓ TANGEDCO Bill Verified! Service #${extracted.consumerNumber || ''} with ${extracted.contractDemandKva || 0} kW sanctioned load.`);
+    const discomLabel = extracted.discomName?.includes('TNPDCL') || extracted.discomName?.includes('TANGEDCO') 
+      ? 'TANGEDCO / TNPDCL' 
+      : 'Discom';
+    setBillNotice(`✓ ${discomLabel} Bill Verified! Consumer: ${extracted.consumerName || 'Verified'} | Service #${extracted.consumerNumber || ''} with ${extracted.contractDemandKva || 0} kW sanctioned load.`);
   };
 
   // Handle Proposal Submission

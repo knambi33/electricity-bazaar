@@ -26,3 +26,6 @@ Thumbs.db
 *.db
 *.sqlite
 dev.db
+
+# OCR language models
+*.traineddata

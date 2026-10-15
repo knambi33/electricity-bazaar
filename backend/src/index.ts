@@ -35,7 +35,8 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 // Request logging
 app.use((req: Request, _res: Response, next: NextFunction) => {
@@ -88,10 +89,17 @@ app.use((req: Request, res: Response) => {
 
 // Global error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+  if (err.type === "entity.too.large") {
+    return res.status(413).json({
+      success: false,
+      error: { code: "PAYLOAD_TOO_LARGE", message: "Uploaded bill file is too large (maximum 50MB allowed)." }
+    });
+  }
   console.error("Unhandled error:", err);
-  res.status(500).json({
+  const status = typeof err.status === "number" ? err.status : 500;
+  return res.status(status).json({
     success: false,
-    error: { code: "INTERNAL_ERROR", message: "An unexpected error occurred" }
+    error: { code: err.code || "INTERNAL_ERROR", message: err.message || "An unexpected error occurred" }
   });
 });
 

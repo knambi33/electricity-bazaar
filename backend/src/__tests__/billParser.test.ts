@@ -70,4 +70,32 @@ describe("Electricity Bill Parser Engine", () => {
     expect(parsed.totalBillInr).toBe(512940);
     expect(parsed.derivedLandedTariff).toBe(16.43);
   });
+
+  it("should extract accurate data for authentic Tamil Nadu LT 1A domestic bill (NAMBIRAJAN.K)", () => {
+    const billText = `
+      TAMILNADU POWER DISTRIBUTION CORPORATION LIMITED
+      Tax Invoice for LT Current Consumption Charges for the Month of October 2026
+      Section: Rural/Manjakuppam | Circle: CUDDALORE | Distribution: KATTUPALAYAM
+      Service Connection Number: 02-001-013-1017
+      Name/Address & GST of the Consumer:
+      NAMBIRAJAN.K
+      S/O Kumarasamy, D.No: 115, 8 Th Cross Street, Anugraha Satellite Township
+      Tariff Applied: LA1A | Sanctioned Load: 5.0 KW | Phase: 3 phase
+      Billing Cycle: Bi-Monthly
+      Consumption [After MF & DT Loss]: 977.0
+      Energy Charges: 7470.85
+      Less: Govt Subsidy: -842.35
+      Net Payable Amt: 6,629.00
+    `;
+
+    const parsed = parseTextToBillData(billText, "020010131017_102026_Invoice_261015_100821.pdf");
+    expect(parsed.state).toBe("Tamil Nadu");
+    expect(parsed.consumerNumber).toBe("02-001-013-1017");
+    expect(parsed.consumerName).toBe("NAMBIRAJAN.K");
+    expect(parsed.contractDemandKva).toBe(5.0);
+    expect(parsed.tariffCategory).toContain("1A");
+    expect(parsed.monthlyUnitsKwh).toBe(489);
+    expect(parsed.totalBillInr).toBe(6629);
+    expect(parsed.derivedLandedTariff).toBe(6.79);
+  });
 });

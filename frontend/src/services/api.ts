@@ -36,7 +36,17 @@ class ApiService {
     };
 
     const res = await fetch(url, { ...options, headers });
-    const json = await res.json();
+    let json: any = {};
+    const text = await res.text();
+    try {
+      json = text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error(
+        res.status === 413
+          ? "Uploaded file is too large (maximum 50MB allowed)."
+          : `Server error (${res.status}): ${text.slice(0, 100) || "Unable to parse response"}`
+      );
+    }
 
     if (!res.ok || json.success === false) {
       const errorMsg = json.error?.message || `Request failed with status ${res.status}`;
