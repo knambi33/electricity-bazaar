@@ -1,37 +1,36 @@
-# Multi-stage production build for Electricity Bazaar API
-FROM node:20-alpine AS builder
+# Production Container for Electricity Bazaar API
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy backend dependencies and schema
+# Copy dependencies and Prisma schema
 COPY backend/package*.json ./
 COPY backend/prisma ./prisma/
-RUN npm ci
 
-# Generate Prisma Client
+# Install all dependencies
+RUN npm install
+
+# Generate Prisma Client for Linux
 RUN npx prisma generate
 
-# Copy source and build TypeScript
+# Copy source code and TypeScript config
 COPY backend/tsconfig.json ./
 COPY backend/src ./src
+
+# Build TypeScript to dist
 RUN npm run build
 
-# Production Runner
-FROM node:20-alpine AS runner
-
-WORKDIR /app
-
+# Default Environment Variables for Railway
 ENV NODE_ENV=production
 ENV PORT=5000
+ENV DATABASE_URL="file:./dev.db"
+ENV JWT_SECRET="railway_production_jwt_secret_electricity_bazaar_2026"
+ENV JWT_REFRESH_SECRET="railway_production_jwt_refresh_secret_electricity_bazaar_2026"
+ENV CORS_ORIGIN="*"
 
-COPY backend/package*.json ./
-RUN npm ci --only=production
-
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
+# Create and sync SQLite database tables
+RUN npx prisma db push
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]
