@@ -1,5 +1,8 @@
 # Production Container for Electricity Bazaar API
-FROM node:20-alpine
+FROM node:20-slim
+
+# Install OpenSSL required by Prisma query engine
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -10,7 +13,7 @@ COPY backend/prisma ./prisma/
 # Install all dependencies
 RUN npm install
 
-# Generate Prisma Client for Linux
+# Generate Prisma Client for Linux Debian
 RUN npx prisma generate
 
 # Copy source code and TypeScript config
@@ -33,4 +36,4 @@ RUN npx prisma db push
 
 EXPOSE 5000
 
-CMD ["sh", "-c", "npx prisma db push && node dist/index.js"]
+CMD ["node", "dist/index.js"]
