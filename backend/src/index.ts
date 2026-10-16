@@ -1,6 +1,8 @@
 import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 
 import authRoutes from "./routes/auth";
@@ -79,7 +81,23 @@ app.use("/api/v1", tenderRoutes);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/rooftop", rooftopRoutes);
 
-// 404 handler
+// Serve Frontend Static in production if dist folder exists
+const possibleDistPaths = [
+  path.resolve(__dirname, "../../frontend/dist"),
+  path.resolve(__dirname, "../frontend/dist"),
+  path.resolve(__dirname, "../public")
+];
+const frontendDistPath = possibleDistPaths.find(p => fs.existsSync(p));
+
+if (frontendDistPath) {
+  app.use(express.static(frontendDistPath));
+  app.get("*", (req: Request, res: Response, next: NextFunction) => {
+    if (req.path.startsWith("/api/")) return next();
+    res.sendFile(path.join(frontendDistPath, "index.html"));
+  });
+}
+
+// 404 handler for API routes
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
