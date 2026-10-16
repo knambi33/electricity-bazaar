@@ -18,7 +18,7 @@ dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
 // CORS configuration
 const allowedOrigins = process.env.CORS_ORIGIN 
@@ -123,9 +123,9 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // Only listen if executed directly
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, () => {
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`⚡ Electricity Bazaar Backend API running on port ${PORT}`);
-    console.log(`🌍 Health check available at: http://localhost:${PORT}/api/v1/health`);
+    console.log(`🌍 Health check available at: http://0.0.0.0:${PORT}/api/v1/health`);
   });
 }
 
