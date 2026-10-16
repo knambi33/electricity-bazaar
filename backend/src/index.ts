@@ -123,10 +123,20 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 
 // Only listen if executed directly
 if (process.env.NODE_ENV !== "test") {
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`⚡ Electricity Bazaar Backend API running on port ${PORT}`);
-    console.log(`🌍 Health check available at: http://0.0.0.0:${PORT}/api/v1/health`);
+  const primaryPort = PORT;
+  app.listen(primaryPort, "0.0.0.0", () => {
+    console.log(`⚡ Electricity Bazaar Backend API running on port ${primaryPort}`);
+    console.log(`🌍 Health check available at: http://0.0.0.0:${primaryPort}/api/v1/health`);
   });
+
+  const secondaryPort = primaryPort === 5000 ? 8080 : 5000;
+  try {
+    app.listen(secondaryPort, "0.0.0.0", () => {
+      console.log(`⚡ Electricity Bazaar Secondary API listening on port ${secondaryPort}`);
+    });
+  } catch {
+    // ignore if secondary port cannot be bound
+  }
 }
 
 export default app;

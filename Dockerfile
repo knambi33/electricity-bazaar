@@ -25,7 +25,6 @@ RUN npm run build
 
 # Default Environment Variables for Railway
 ENV NODE_ENV=production
-ENV PORT=5000
 ENV DATABASE_URL="file:./dev.db"
 ENV JWT_SECRET="railway_production_jwt_secret_electricity_bazaar_2026"
 ENV JWT_REFRESH_SECRET="railway_production_jwt_refresh_secret_electricity_bazaar_2026"
@@ -35,5 +34,6 @@ ENV CORS_ORIGIN="*"
 RUN npx prisma db push
 
 EXPOSE 5000
+EXPOSE 8080
 
 CMD ["node", "dist/index.js"]
