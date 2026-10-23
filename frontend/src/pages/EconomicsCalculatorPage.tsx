@@ -225,6 +225,7 @@ export const EconomicsCalculatorPage: React.FC = () => {
           {[
             { name: 'Tamil Nadu', label: 'Tamil Nadu (TNERC) — Pilot' },
             { name: 'Telangana', label: 'Telangana (TSERC) — Pilot' },
+            { name: 'Puducherry', label: 'Puducherry (JERC / PED) — Pilot' },
             { name: 'Gujarat', label: 'Gujarat (GERC)' },
             { name: 'Maharashtra', label: 'Maharashtra (MERC)' },
             { name: 'Rajasthan', label: 'Rajasthan (RERC)' }

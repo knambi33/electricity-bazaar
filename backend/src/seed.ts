@@ -494,6 +494,44 @@ async function main() {
     }
   });
 
+  // Listing 6: 10 MW Solar-Wind Hybrid for Puducherry & Coastal Open Access
+  const listingHybridPY = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-PY-HYB-07",
+      organisationId: sellerOrgTN.id,
+      title: "DEMO: 10 MW Solar-Wind Hybrid Project (4 MW Available) - Puducherry / Cuddalore Corridor",
+      slug: "demo-10-mw-solar-wind-hybrid-puducherry-corridor",
+      category: "HYBRID_RENEWABLE",
+      commercialModel: "GROUP_CAPTIVE",
+      state: "Puducherry",
+      projectLocation: "Puducherry / Sedarapet & Cuddalore Industrial Interconnection Corridor",
+      totalCapacityMw: 10.0,
+      availableCapacityMw: 4.0,
+      indicativePricePerKwh: 3.80,
+      priceBasisConditions: "Ex-busbar at 22/33 kV sub-station. 15-year PPA. Group Captive SPV compliant with JERC Green Energy Open Access (GEOA) with ZERO CSS and ZERO Additional Surcharge.",
+      contractDurationYears: 15,
+      expectedAvailabilityDate: new Date("2026-11-15"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "Connected to 110/22 kV Sedarapet / Bahour Substation grid network.",
+      projectStatus: "OPERATIONAL",
+      regulatoryApprovals: "JERC Open Access in-principle approval, PED technical feasibility and CEIG electrical clearance documented.",
+      isFeatured: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 112,
+      renewableDetails: {
+        create: {
+          technology: "Hybrid: 6 MW Solar Bifacial Mono-PERC + 4 MW High-CUF Wind Turbines",
+          dcAcRatio: 1.34,
+          cuFactorPercent: 35.8,
+          expectedAnnualGenMu: 31.4,
+          captiveStructureInfo: "Structured Group Captive SPV under JERC & Electricity Rules 2005 (26% equity holding / 51% proportional consumption).",
+          bankingTerms: "Monthly energy banking settlement as per JERC Green Energy Open Access regulations."
+        }
+      }
+    }
+  });
+
   // 4. Create an active Enquiry between Buyer and Seller
   const demoEnquiry = await prisma.enquiry.create({
     data: {

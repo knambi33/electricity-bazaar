@@ -498,14 +498,14 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                       </a>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
                     <button
                       type="button"
                       onClick={() => handleSampleSelect('sample_tn_hvf')}
                       className="text-left p-2.5 rounded-lg border border-teal-300 hover:border-teal-500 bg-teal-50/30 hover:bg-teal-50/70 transition-all text-xs shadow-2xs group"
                     >
                       <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
-                        <span>Tamil Nadu (TNPDCL / HVF)</span>
+                        <span>Tamil Nadu (HVF)</span>
                         <span className="text-[10px] bg-teal-200 text-teal-900 px-1.5 py-0.5 rounded font-mono font-bold">Your Bill</span>
                       </div>
                       <div className="text-[11px] text-slate-600 mt-0.5 truncate font-medium">Heavy Vehicles Factory Avadi</div>
@@ -523,6 +523,19 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                       </div>
                       <div className="text-[11px] text-slate-600 mt-0.5 truncate font-medium">S R FLOAT GLASS (Nacharam)</div>
                       <div className="text-[10px] text-teal-700 font-semibold mt-1">480 kVA • 31,226 kWh • ₹16.43/u</div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSampleSelect('sample_py_ped_ht')}
+                      className="text-left p-2.5 rounded-lg border border-teal-300 hover:border-teal-500 bg-teal-50/30 hover:bg-teal-50/70 transition-all text-xs shadow-2xs group"
+                    >
+                      <div className="font-bold text-navy-900 group-hover:text-teal-700 flex items-center justify-between">
+                        <span>Puducherry (PED)</span>
+                        <span className="text-[10px] bg-teal-200 text-teal-900 px-1.5 py-0.5 rounded font-mono font-bold">Pilot</span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-0.5 truncate font-medium">Pipdic Sedarapet Enterprise</div>
+                      <div className="text-[10px] text-teal-700 font-semibold mt-1">1,500 kVA • 240k kWh • ₹7.45/u</div>
                     </button>
 
                     <button
@@ -875,6 +888,7 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
               >
                 <option value="Tamil Nadu">Tamil Nadu (TNERC / TANGEDCO) — Launch Pilot</option>
                 <option value="Telangana">Telangana (TSERC / TSSPDCL) — Flagship Pilot</option>
+                <option value="Puducherry">Puducherry (JERC / PED) — Open Access Pilot</option>
                 <option value="Gujarat">Gujarat (GERC / GUVNL)</option>
                 <option value="Maharashtra">Maharashtra (MERC / MSEDCL)</option>
                 <option value="Rajasthan">Rajasthan (RERC)</option>

@@ -222,5 +222,46 @@ export const STATE_REGULATORY_PROFILES: Record<string, StateRegulatoryProfile> =
     effectiveTariffOrderDate: "2026 TNERC Comprehensive Tariff & Multi-Year Open Access Order",
     regulatoryAuthority: "Tamil Nadu Electricity Regulatory Commission (TNERC)",
     disclaimer: "Applicable to HT/EHT consumers with contracted demand >= 63 kVA (HT-I/HT-III) or >= 100 kW for Green Energy Open Access (GEOA)."
+  },
+
+  Puducherry: {
+    state: "Puducherry",
+    discoms: [
+      "Electricity Department, Government of Puducherry (PED / PEDP)",
+      "Puducherry Electricity Department - Urban / Rural / Karaikal"
+    ],
+    voltageLevels: [
+      {
+        level: "11/22 kV (HT-1A Industrial & Commercial)",
+        typicalIndustrialTariffRsPerKwh: 7.20,
+        wheelingChargeRsPerKwh: 0.48,
+        crossSubsidySurchargeRsPerKwh: 1.42,
+        stuTransmissionLossPercent: 2.8
+      },
+      {
+        level: "33/110 kV (EHT Industrial & Heavy Processing)",
+        typicalIndustrialTariffRsPerKwh: 6.80,
+        wheelingChargeRsPerKwh: 0.22,
+        crossSubsidySurchargeRsPerKwh: 1.15,
+        stuTransmissionLossPercent: 2.2
+      }
+    ],
+    transmissionChargeRsPerKwh: 0.26,
+    additionalSurchargeRsPerKwh: 0.0, // JERC exempts Additional Surcharge on Green Open Access / Captive
+    bankingChargesRsPerKwh: 0.18,
+    sldcChargesRsPerKwh: 0.03,
+    groupCaptiveExemptions: {
+      cssExempt: true,
+      additionalSurchargeExempt: true,
+      equityRequirementPercent: 26,
+      consumptionRequirementPercent: 51
+    },
+    effectiveTariffOrderDate: "2026 JERC Multi-Year Tariff Order for Electricity Department of Puducherry",
+    regulatoryAuthority: "Joint Electricity Regulatory Commission (JERC for Goa & UTs)",
+    disclaimer: "Applicable to HT/EHT industrial & commercial consumers with contracted demand >= 100 kW under JERC Green Energy Open Access (GEOA) regulations."
   }
 };
+
+// Aliases for seamless state matching
+STATE_REGULATORY_PROFILES["Pondicherry"] = STATE_REGULATORY_PROFILES["Puducherry"];
+

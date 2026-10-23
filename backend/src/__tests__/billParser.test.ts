@@ -98,4 +98,35 @@ describe("Electricity Bill Parser Engine", () => {
     expect(parsed.totalBillInr).toBe(6629);
     expect(parsed.derivedLandedTariff).toBe(6.79);
   });
+
+  it("should extract accurate data for Puducherry PED HT Industrial bill preset", async () => {
+    const data = await extractBillDetails({ samplePreset: "sample_py_ped_ht" });
+    expect(data.state).toBe("Puducherry");
+    expect(data.discomName).toContain("Puducherry");
+    expect(data.consumerNumber).toBe("HT-PY-05-11029");
+    expect(data.contractDemandKva).toBe(1500);
+    expect(data.monthlyUnitsKwh).toBe(240000);
+    expect(data.totalBillInr).toBe(1788000);
+    expect(data.derivedLandedTariff).toBe(7.45);
+  });
+
+  it("should parse authentic Puducherry LT Domestic Rooftop bill", () => {
+    const billText = `
+      ELECTRICITY DEPARTMENT PUDUCHERRY
+      LT DOMESTIC BILL
+      Consumer No: 05-22-01-0412
+      Name: Auroville French Heritage Villa (Rue de la Marine)
+      Tariff: LT-1A Domestic | Sanctioned Load: 5.0 KW
+      Total Units: 460
+      Net Amount Payable: 3,150.00
+    `;
+
+    const parsed = parseTextToBillData(billText, "Puducherry_Auroville_Bill.pdf");
+    expect(parsed.state).toBe("Puducherry");
+    expect(parsed.consumerNumber).toBe("05-22-01-0412");
+    expect(parsed.contractDemandKva).toBe(5);
+    expect(parsed.monthlyUnitsKwh).toBe(460);
+    expect(parsed.totalBillInr).toBe(3150);
+    expect(parsed.derivedLandedTariff).toBe(6.85);
+  });
 });

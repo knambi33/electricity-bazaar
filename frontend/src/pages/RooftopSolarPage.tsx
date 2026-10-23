@@ -276,14 +276,23 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
   };
 
   // Handle Sample Bill Preset Click
-  const handleSampleBillPreset = async (presetKey: 'sample_tn_rooftop_home' | 'sample_tn_rooftop_rwa') => {
+  const handleSampleBillPreset = async (
+    presetKey: 'sample_tn_rooftop_home' | 'sample_tn_rooftop_rwa' | 'sample_py_rooftop_home' | 'sample_py_rooftop_rwa' | string
+  ) => {
     setIsExtractingBill(true);
     setBillNotice(null);
     try {
       const extracted = await api.extractBillData({ samplePreset: presetKey });
-      const sampleFileName = presetKey === 'sample_tn_rooftop_home' 
-        ? 'TANGEDCO_Home_LT1A_Bill_020010131017.pdf' 
-        : 'TANGEDCO_Greenwood_RWA_LT1D_Bill_02184012340.pdf';
+      let sampleFileName = 'Sample_Electricity_Bill.pdf';
+      if (presetKey === 'sample_tn_rooftop_home') {
+        sampleFileName = 'TANGEDCO_Home_LT1A_Bill_020010131017.pdf';
+      } else if (presetKey === 'sample_tn_rooftop_rwa') {
+        sampleFileName = 'TANGEDCO_Greenwood_RWA_LT1D_Bill_02184012340.pdf';
+      } else if (presetKey === 'sample_py_rooftop_home') {
+        sampleFileName = 'PED_Puducherry_Villa_LT1A_Bill_0522010412.pdf';
+      } else if (presetKey === 'sample_py_rooftop_rwa') {
+        sampleFileName = 'PED_Puducherry_Lawspet_RWA_LT1D_Bill_0518030891.pdf';
+      }
       setUploadedBillFileName(sampleFileName);
       applyExtractedBillData(extracted, sampleFileName);
     } catch (err: any) {
@@ -577,29 +586,47 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 Upload Electricity Bill for Instant Sizing & EPC Portal Dossier
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
-                Capture your <strong>TANGEDCO / TSSPDCL</strong> bill (PDF, JPG, PNG). Our engine extracts your consumer number, sanctioned load, and units to calculate exact savings and packages a verified application dossier for the EPC to file on the <strong>PM Surya Ghar National Portal</strong> and <strong>TANGEDCO Net Metering Portal</strong>.
+                Capture your <strong>TANGEDCO / TSSPDCL / Puducherry PED</strong> bill (PDF, JPG, PNG). Our engine extracts your consumer number, sanctioned load, and units to calculate exact savings and packages a verified application dossier for the EPC to file on the <strong>PM Surya Ghar National Portal</strong>, <strong>TANGEDCO Net Metering Portal</strong>, and <strong>PED Solar Portal</strong>.
               </p>
             </div>
 
             {/* Quick 1-Click Sample Bill Buttons */}
-            <div className="flex flex-wrap sm:flex-nowrap gap-2 flex-shrink-0">
+            <div className="flex flex-wrap gap-2 flex-shrink-0">
               <button
                 type="button"
                 onClick={() => handleSampleBillPreset('sample_tn_rooftop_home')}
                 disabled={isExtractingBill}
-                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+                className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold px-2.5 py-1.5 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
               >
                 <Home className="w-3.5 h-3.5 text-amber-600" />
-                <span>Try Sample Home Bill (5 kW)</span>
+                <span>TN Home (5 kW)</span>
               </button>
               <button
                 type="button"
                 onClick={() => handleSampleBillPreset('sample_tn_rooftop_rwa')}
                 disabled={isExtractingBill}
-                className="bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+                className="bg-teal-50 hover:bg-teal-100 text-teal-900 border border-teal-300 font-bold px-2.5 py-1.5 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
               >
                 <Building2 className="w-3.5 h-3.5 text-teal-700" />
-                <span>Try Sample RWA Bill (45 kW)</span>
+                <span>TN RWA (45 kW)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSampleBillPreset('sample_py_rooftop_home')}
+                disabled={isExtractingBill}
+                className="bg-sky-50 hover:bg-sky-100 text-sky-900 border border-sky-300 font-bold px-2.5 py-1.5 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+              >
+                <Home className="w-3.5 h-3.5 text-sky-600" />
+                <span>Pondy Villa (5 kW)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSampleBillPreset('sample_py_rooftop_rwa')}
+                disabled={isExtractingBill}
+                className="bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold px-2.5 py-1.5 rounded-xl text-xs flex items-center space-x-1.5 transition disabled:opacity-50"
+              >
+                <Building2 className="w-3.5 h-3.5 text-emerald-700" />
+                <span>Pondy RWA (30 kW)</span>
               </button>
             </div>
           </div>
@@ -618,7 +645,7 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                   <UploadCloud className="w-6 h-6" />
                 </div>
                 <span className="font-bold text-sm text-slate-800">
-                  Click to Browse or Drag & Drop TANGEDCO / TSSPDCL Bill
+                  Click to Browse or Drag & Drop TANGEDCO / PED / TSSPDCL Bill
                 </span>
                 <span className="text-xs text-slate-500 mt-1">
                   Supports PDF, PNG, JPG (e.g. EB white meter card, online PDF receipt, or HT/LT bill)
@@ -1076,15 +1103,15 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <Sparkles className="w-4 h-4" />
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-                Active Tamil Nadu Promotional Campaigns
+                Active Tamil Nadu & Puducherry Promotional Campaigns
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Bulk aggregation drives and exclusive community subsidies negotiated for Tamil Nadu residents.
+              Bulk aggregation drives and exclusive community subsidies negotiated for Tamil Nadu & Puducherry residents.
             </p>
           </div>
           <span className="text-xs font-semibold bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full">
-            {campaigns.length} Active Campaigns in TN
+            {campaigns.length} Active Campaigns in TN & PY
           </span>
         </div>
 
@@ -1156,17 +1183,17 @@ export const RooftopSolarPage: React.FC<RooftopSolarPageProps> = ({ setCurrentVi
                 <Award className="w-4 h-4" />
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-                Empanelled Tamil Nadu Rooftop EPC Vendors
+                Empanelled Tamil Nadu & Puducherry Rooftop EPC Vendors
               </h2>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Vetted engineering contractors with MNRE empanelment and TANGEDCO vendor registration.
+              Vetted engineering contractors with MNRE empanelment, TANGEDCO & Puducherry PED registration.
             </p>
           </div>
 
           {/* District Filter Pills */}
           <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
-            {['ALL', 'Coimbatore', 'Chennai', 'Madurai', 'Trichy', 'Salem'].map((dist) => (
+            {['ALL', 'Coimbatore', 'Chennai', 'Madurai', 'Trichy', 'Salem', 'Puducherry'].map((dist) => (
               <button
                 key={dist}
                 onClick={() => setSelectedDistrictFilter(dist)}

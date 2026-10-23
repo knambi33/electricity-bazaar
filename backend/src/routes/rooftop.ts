@@ -186,11 +186,84 @@ export const TAMIL_NADU_ROOFTOP_EPCS = [
     contactEmail: "sales@cholasolar.demo",
     phone: "+91 98940 33110",
     headquarters: "Fairlands, Salem - 636016"
+  },
+  {
+    id: "epc-py-01",
+    name: "Auroville Renewable Energy Solutions (ARES)",
+    tradeName: "Auroville Clean Energy",
+    registeredCity: "Auroville / Puducherry",
+    coveredDistricts: ["Puducherry", "Auroville", "Villupuram", "Cuddalore", "Karaikal"],
+    experienceYears: 14,
+    rooftopProjectsCompleted: 420,
+    totalInstalledCapacityMw: 16.8,
+    mnreEmpanelled: true,
+    tangedcoVendorRegistered: true,
+    specialization: ["Heritage Villas", "Eco-Communities", "Apartment RWAs", "Micro-grids"],
+    rating: 4.9,
+    reviewCount: 168,
+    warrantyOffered: "25 Years Tier-1 Bifacial Solar Module Warranty, 10 Years Inverter, JERC Net Metering Clearance Included",
+    turnkeyRatePerWattInr: 53, // ₹53,000 / kW
+    badge: "Puducherry & Auroville Pioneer EPC",
+    contactEmail: "solar@ares-auroville.demo",
+    phone: "+91 94892 45110",
+    headquarters: "Auroshilpam, Auroville / Puducherry - 605101"
+  },
+  {
+    id: "epc-py-02",
+    name: "Puducherry Green Power Systems & Infrastructure",
+    tradeName: "Pondy Solar Tech",
+    registeredCity: "Puducherry",
+    coveredDistricts: ["Puducherry", "Karaikal", "Mahe", "Yanam"],
+    experienceYears: 8,
+    rooftopProjectsCompleted: 210,
+    totalInstalledCapacityMw: 7.5,
+    mnreEmpanelled: true,
+    tangedcoVendorRegistered: true,
+    specialization: ["Coastal Rooftops", "Apartment Societies", "Commercial Establishments"],
+    rating: 4.8,
+    reviewCount: 94,
+    warrantyOffered: "25 Years Performance Guarantee with Marine Corrosion Resistant Aluminium Racking, 8 Years Inverter",
+    turnkeyRatePerWattInr: 54, // ₹54,000 / kW
+    badge: "Puducherry Coastal Specialist",
+    contactEmail: "contact@pondysolartech.demo",
+    phone: "+91 98430 76220",
+    headquarters: "Mission Street, Heritage Town, Puducherry - 605001"
   }
 ];
 
-// Active Promotional Campaigns in Tamil Nadu
+// Active Promotional Campaigns in Tamil Nadu & Puducherry Pilot Areas
 export const TAMIL_NADU_ROOFTOP_CAMPAIGNS = [
+  {
+    id: "cmp-py-villa-01",
+    title: "Puducherry Green Heritage Villa & Coastal Rooftop Solar Drive",
+    slug: "puducherry-green-heritage-villa-coastal-rooftop-drive",
+    tagline: "Zero Electric Bills for Heritage Villas & Apartment Societies + PM Surya Ghar DBT Subsidy",
+    bannerHighlight: "Zero Electric Bills for Heritage Villas & Apartment Societies + PM Surya Ghar DBT Subsidy",
+    targetAudience: "Puducherry Homeowners, French Quarter Heritage Villas & Apartment RWAs",
+    region: "Union Territory of Puducherry (Puducherry, Karaikal, Mahe, Yanam)",
+    coverageArea: "Puducherry, White Town, Lawspet, Sedarapet, Karaikal",
+    discountOffer: "Special Coastal Package + Direct DBT",
+    validTill: "31 Dec 2026",
+    expiryDate: "2026-12-31",
+    subsidyScheme: "PM Surya Ghar + PED Net Metering Portal",
+    ctaText: "Join Puducherry Campaign",
+    description: "Tailored solar engineering featuring marine-grade corrosion-resistant aluminium structures for Puducherry's coastal atmosphere. Complete liaisoning with Electricity Department Puducherry (PED) and national portal DBT processing.",
+    highlights: [
+      "Marine-Grade Anti-Corrosion Racking: Anodized aluminium structures built for coastal saline air.",
+      "PM Surya Ghar DBT: Up to ₹78,000 direct subsidy for residences and ₹18,000/kW for apartment common utilities.",
+      "Turnkey PED Net Metering liaisoning through Auroville & Puducherry empanelled contractors.",
+      "Payback in ~3.3 years with zero maintenance for the first 5 years."
+    ],
+    benefits: [
+      "Marine-Grade Anti-Corrosion Racking: Anodized aluminium structures built for coastal saline air.",
+      "PM Surya Ghar DBT: Up to ₹78,000 direct subsidy for residences and ₹18,000/kW for apartment common utilities.",
+      "Turnkey PED Net Metering liaisoning through Auroville & Puducherry empanelled contractors.",
+      "Payback in ~3.3 years with zero maintenance for the first 5 years."
+    ],
+    status: "ACTIVE",
+    registeredSocietiesCount: 29,
+    featuredBadge: "Puducherry Pilot Exclusive"
+  },
   {
     id: "cmp-tn-apt-01",
     title: "Tamil Nadu Apartment Solar Community Aggregation Campaign",
@@ -580,29 +653,59 @@ router.post("/proposals", (req: Request, res: Response): void => {
       desiredCapacityKw: desiredCapacityKw ? parseFloat(desiredCapacityKw) : undefined
     });
 
-    const proposalCode = `EB-ROOF-TN-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const isPuducherry =
+      (city && /puducherry|pondicherry|karaikal|auroville|lawspet|sedarapet/i.test(city)) ||
+      (district && /puducherry|pondicherry|karaikal/i.test(district)) ||
+      (discomName && /ped|puducherry|pondicherry/i.test(discomName));
+
+    const stateName = isPuducherry ? "Puducherry" : "Tamil Nadu";
+    const proposalCode = `EB-ROOF-${isPuducherry ? "PY" : "TN"}-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
     // Automatically match top 2 local EPC vendors if none selected
     let selectedVendors = targetEpcVendorIds;
     if (!selectedVendors || selectedVendors.length === 0) {
       const localMatches = TAMIL_NADU_ROOFTOP_EPCS.filter(v => 
-        v.registeredCity.toLowerCase() === city.toLowerCase() || 
-        v.coveredDistricts.some(d => d.toLowerCase() === (district || city).toLowerCase())
+        v.registeredCity.toLowerCase().includes(city.toLowerCase()) || 
+        v.coveredDistricts.some(d => d.toLowerCase().includes((district || city).toLowerCase()))
       );
       selectedVendors = localMatches.length > 0 
         ? localMatches.slice(0, 3).map(v => v.id)
         : TAMIL_NADU_ROOFTOP_EPCS.slice(0, 2).map(v => v.id);
     }
 
+    const defaultDiscom = isPuducherry
+      ? "Electricity Department, Government of Puducherry (PED)"
+      : "TANGEDCO (Tamil Nadu Generation & Distribution Corporation)";
+
+    const stateDiscomPortalUrl = isPuducherry
+      ? "https://ped.py.gov.in/solar"
+      : "https://www.tnebnet.org/awp/solarLogin";
+
+    const filingChecklist = isPuducherry
+      ? [
+          "Consumer Service Connection Number verified with Electricity Department Puducherry (PED) database",
+          "Sanctioned load sufficiency verified (JERC allows rooftop capacity up to 100% of sanctioned load)",
+          "DCR compliant modules selected for PM Surya Ghar DBT eligibility",
+          "PED Net Metering Portal online dossier docket prepared (https://ped.py.gov.in/solar)",
+          "Bi-directional net meter requisition docket ready for local PED Division / Sub-division submission"
+        ]
+      : [
+          "Consumer Service Connection Number verified with TANGEDCO LT database",
+          "Sanctioned load sufficiency verified (TNERC allows rooftop capacity up to 100% of sanctioned load)",
+          "DCR compliant modules selected for PM Surya Ghar DBT eligibility",
+          "CEIG Safety Inspection Form prepopulated (required if system > 10 kW)",
+          "Bi-directional net meter requisition docket ready for local TANGEDCO Section Office submission"
+        ];
+
     const dossierForEpc: EpcApplicationDossier = {
       portalSchemeName: applicantType === "APARTMENT_RWA"
         ? "PM Surya Ghar: Resident Welfare Association Common Facility Solar Scheme"
         : "PM Surya Ghar: Muft Bijli Yojana (National Rooftop Portal)",
       nationalPortalUrl: "https://pmsuryaghar.gov.in",
-      stateDiscomPortalUrl: "https://www.tnebnet.org/awp/solarLogin",
+      stateDiscomPortalUrl,
       consumerName: fullName,
       consumerNumber: ebConsumerNumber || "Provided via attached EB bill",
-      discomName: discomName || "TANGEDCO (Tamil Nadu Generation & Distribution Corporation)",
+      discomName: discomName || defaultDiscom,
       tariffCategory: tariffCategory || (applicantType === "APARTMENT_RWA" ? "Tariff 1D (Common Services)" : "Tariff 1A (Domestic LT)"),
       sanctionedLoadKw: sanctionedLoadKw ? parseFloat(sanctionedLoadKw) : economics.capacityKw,
       monthlyAverageKwh: monthlyUnitsKwh ? parseFloat(monthlyUnitsKwh) : economics.monthlyGenUnits,
@@ -613,14 +716,8 @@ router.post("/proposals", (req: Request, res: Response): void => {
       applicableStateSubsidyInr: 0,
       netPayableAfterSubsidiesInr: economics.netPayableInr,
       billDocumentAttached: Boolean(billFileName || ebConsumerNumber),
-      billFileName: billFileName || (ebConsumerNumber ? `TANGEDCO_EB_Bill_${ebConsumerNumber}.pdf` : undefined),
-      filingChecklist: [
-        "Consumer Service Connection Number verified with TANGEDCO LT database",
-        "Sanctioned load sufficiency verified (TNERC allows rooftop capacity up to 100% of sanctioned load)",
-        "DCR compliant modules selected for PM Surya Ghar DBT eligibility",
-        "CEIG Safety Inspection Form prepopulated (required if system > 10 kW)",
-        "Bi-directional net meter requisition docket ready for local TANGEDCO Section Office submission"
-      ]
+      billFileName: billFileName || (ebConsumerNumber ? `${isPuducherry ? "PED" : "TANGEDCO"}_EB_Bill_${ebConsumerNumber}.pdf` : undefined),
+      filingChecklist
     };
 
     const newRecord: RooftopProposalRecord = {
@@ -632,11 +729,11 @@ router.post("/proposals", (req: Request, res: Response): void => {
       email: email || `${phone.replace(/\D/g, '')}@lead.electricitybazaar.in`,
       city,
       district: district || city,
-      state: "Tamil Nadu",
+      state: stateName,
       apartmentName,
       numberOfFlats: numberOfFlats ? parseInt(numberOfFlats) : undefined,
       ebConsumerNumber,
-      discomName: discomName || "TANGEDCO",
+      discomName: discomName || defaultDiscom,
       tariffCategory,
       monthlyUnitsKwh: monthlyUnitsKwh ? parseFloat(monthlyUnitsKwh) : economics.monthlyGenUnits,
       monthlyBillInr: parseFloat(monthlyBillInr),
