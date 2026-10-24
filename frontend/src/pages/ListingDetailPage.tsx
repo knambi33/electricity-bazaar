@@ -15,7 +15,11 @@ import {
   Share2,
   ExternalLink,
   DollarSign,
-  Cpu
+  Cpu,
+  Lock,
+  Unlock,
+  FileCheck2,
+  ShieldAlert
 } from 'lucide-react';
 import { api } from '../services/api';
 import { MarketplaceListing } from '../types';
@@ -45,6 +49,19 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
   const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
   const [enquirySuccess, setEnquirySuccess] = useState(false);
 
+  // Confidentiality / NDA Unlock State
+  const [ndaModalOpen, setNdaModalOpen] = useState(false);
+  const [isNdaUnlocked, setIsNdaUnlocked] = useState(false);
+  const [unlockedPayload, setUnlockedPayload] = useState<any>(null);
+  const [isRequestingNda, setIsRequestingNda] = useState(false);
+  const [ndaForm, setNdaForm] = useState({
+    companyName: '',
+    contactPerson: '',
+    designatedRole: 'Procurement Head / Director',
+    purpose: 'Commercial Power Offtake Evaluation & Grid Feasibility',
+    acceptTerms: true
+  });
+
   useEffect(() => {
     async function loadDetails() {
       setIsLoading(true);
@@ -53,6 +70,11 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         setListing(data);
         if (data.availableCapacityMw) {
           setEnquiryCapacityMw(Math.min(5.0, data.availableCapacityMw));
+        }
+
+        // If not confidential or already unmasked
+        if (!data.isConfidential && !data.isMaskedForPrivacy) {
+          setIsNdaUnlocked(true);
         }
 
         // Fetch similar listings in same state or category
@@ -94,6 +116,37 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
     }
   };
 
+  const handleExecuteNda = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!listing) return;
+    if (!ndaForm.acceptTerms) {
+      alert("Please accept the Standard Mutual NDA terms to proceed.");
+      return;
+    }
+
+    setIsRequestingNda(true);
+    try {
+      const res = await api.requestNdaUnlock(listing.id, {
+        corporateEntityName: ndaForm.companyName || 'Corporate Buyer Entity',
+        designatedSignatory: `${ndaForm.contactPerson || 'Authorized Signatory'} (${ndaForm.designatedRole})`,
+        companyPanGst: 'IN-GST-VERIFIED',
+        intentionScope: ndaForm.purpose,
+        ndaTermsAccepted: ndaForm.acceptTerms
+      });
+
+      setIsNdaUnlocked(true);
+      setUnlockedPayload(res);
+      setNdaModalOpen(false);
+    } catch (err: any) {
+      alert(`NDA Request note: ${err.message || 'Unable to complete NDA unlock. Please ensure you are signed in.'}`);
+      if (!localStorage.getItem('eb_token')) {
+        setCurrentView('login');
+      }
+    } finally {
+      setIsRequestingNda(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-16 text-center">
@@ -119,6 +172,9 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
     );
   }
 
+  const isBay = listing.category === 'SUBSTATION_BAY';
+  const isLand = listing.category === 'LAND_PARCEL';
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       {/* Back button */}
@@ -131,6 +187,50 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           <span>Back to Marketplace</span>
         </button>
       </div>
+
+      {/* Confidentiality Alert Banner if Protected */}
+      {listing.isConfidential && !isNdaUnlocked && (
+        <div className="bg-gradient-to-r from-slate-900 via-navy-900 to-slate-900 border border-teal-500/30 rounded-2xl p-5 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-2.5 bg-teal-500/20 text-teal-300 rounded-xl mt-0.5 border border-teal-500/30">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-black uppercase tracking-wider text-teal-400">
+                  Confidential Infrastructure Asset / NDA Protected
+                </span>
+                <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
+                  Mutual NDA Required
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                The developer has designated exact substation bay bay-numbers, plant GPS coordinates, and single-line diagrams (SLD) as confidential. Execute a 1-click Mutual NDA / LOI to immediately unlock the full technical dossier.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setNdaModalOpen(true)}
+            className="whitespace-nowrap bg-teal-500 hover:bg-teal-400 text-navy-950 font-extrabold px-5 py-2.5 rounded-xl text-xs flex items-center space-x-2 transition shadow-lg shadow-teal-500/20"
+          >
+            <Unlock className="w-4 h-4" />
+            <span>Execute NDA & Unlock Technical Dossier</span>
+          </button>
+        </div>
+      )}
+
+      {/* Unlocked Confirmation Banner */}
+      {isNdaUnlocked && (
+        <div className="bg-teal-50 border border-teal-300 rounded-2xl p-4 text-teal-900 flex items-center justify-between gap-4">
+          <div className="flex items-center space-x-2.5 text-xs font-bold">
+            <CheckCircle2 className="w-4 h-4 text-teal-600" />
+            <span>Mutual NDA / LOI Verified — Unmasked GPS Coordinates & Single-Line Diagrams Accessible</span>
+          </div>
+          <span className="text-[11px] font-mono text-teal-800 bg-teal-100 px-2 py-1 rounded">
+            LOI REF: EB-LOI-{listing.listingCode}
+          </span>
+        </div>
+      )}
 
       {/* Main Header Card */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
@@ -150,6 +250,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded font-semibold">
                 {listing.category.replace(/_/g, ' ')}
               </span>
+              {listing.isConfidential && (
+                <span className="text-xs bg-slate-900 text-teal-300 px-2.5 py-0.5 rounded font-bold flex items-center space-x-1">
+                  <Lock className="w-3 h-3" />
+                  <span>NDA Protected</span>
+                </span>
+              )}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold text-navy-900 brand-font leading-tight">
@@ -163,7 +269,12 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               </span>
               <span className="flex items-center space-x-1.5">
                 <MapPin className="w-4 h-4 text-slate-400" />
-                <span>Location: <strong className="text-slate-900">{listing.projectLocation}</strong></span>
+                <span>Location: <strong className="text-slate-900">
+                  {listing.isConfidential && !isNdaUnlocked 
+                    ? (listing.maskedLocation || `${listing.state} Corridor (Locked until NDA)`)
+                    : listing.projectLocation
+                  }
+                </strong></span>
               </span>
               <span className="flex items-center space-x-1.5">
                 <Calendar className="w-4 h-4 text-slate-400" />
@@ -176,10 +287,14 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 min-w-[260px] flex flex-col justify-between space-y-4">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                Indicative Generation Tariff
+                {isLand ? 'Indicative Land Lease / Valuation' : isBay ? 'Indicative Bay Tariff / Charge' : 'Indicative Generation Tariff'}
               </span>
               <div className="text-3xl font-black text-navy-900 brand-font mt-0.5">
-                {listing.indicativePricePerKwh ? (
+                {isLand ? (
+                  <span className="text-xl">₹4.5L - ₹6.0L <span className="text-xs font-normal text-slate-500">/ acre / yr</span></span>
+                ) : isBay ? (
+                  <span className="text-xl">Dedicated STU/CTU Bay</span>
+                ) : listing.indicativePricePerKwh ? (
                   <>
                     ₹{listing.indicativePricePerKwh.toFixed(2)}
                     <span className="text-xs font-normal text-slate-500"> / kWh</span>
@@ -193,29 +308,54 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
               </span>
             </div>
 
-            <button
-              onClick={() => setEnquiryModalOpen(true)}
-              className="w-full bg-teal-600 hover:bg-teal-500 text-navy-900 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-md shadow-teal-600/20"
-            >
-              <Send className="w-4 h-4" />
-              <span>Contact Developer / Send RFP</span>
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => setEnquiryModalOpen(true)}
+                className="w-full bg-teal-600 hover:bg-teal-500 text-navy-900 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 transition shadow-md shadow-teal-600/20"
+              >
+                <Send className="w-4 h-4" />
+                <span>Contact Developer / Send RFP</span>
+              </button>
+
+              {listing.isConfidential && !isNdaUnlocked && (
+                <button
+                  onClick={() => setNdaModalOpen(true)}
+                  className="w-full bg-navy-900 hover:bg-slate-800 text-teal-300 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center justify-center space-x-1.5 transition border border-teal-500/30"
+                >
+                  <Lock className="w-3.5 h-3.5 text-teal-400" />
+                  <span>Execute NDA to View SLD</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Technical Highlights Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-100 text-xs">
           <div className="bg-slate-50 p-3.5 rounded-xl">
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Available Capacity</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold">
+              {isLand ? 'Total Land Area' : isBay ? 'Evacuation Bay Capacity' : 'Available Capacity'}
+            </span>
             <span className="text-base font-extrabold text-teal-700">
-              {listing.availableCapacityMw} MW <span className="text-xs font-normal text-slate-400">/ {listing.totalCapacityMw} MW Total</span>
+              {isLand 
+                ? `${listing.landAreaAcres || listing.availableCapacityMw * 4} Acres`
+                : isBay 
+                ? `${listing.bayCapacityMw || listing.availableCapacityMw} MW`
+                : `${listing.availableCapacityMw} MW`
+              }
+              {!isLand && <span className="text-xs font-normal text-slate-400"> / {listing.totalCapacityMw} MW Total</span>}
             </span>
           </div>
 
           <div className="bg-slate-50 p-3.5 rounded-xl">
-            <span className="text-slate-400 block text-[10px] uppercase font-bold">Commercial Structure</span>
+            <span className="text-slate-400 block text-[10px] uppercase font-bold">
+              {isBay ? 'Substation Voltage' : 'Commercial Structure'}
+            </span>
             <span className="text-sm font-bold text-slate-800">
-              {listing.commercialModel.replace(/_/g, ' ')}
+              {isBay && listing.substationVoltageKv 
+                ? `${listing.substationVoltageKv} kV Level` 
+                : listing.commercialModel.replace(/_/g, ' ')
+              }
             </span>
           </div>
 
@@ -239,8 +379,67 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left 2 Cols: Technical & Commercial Specs */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Substation Bay Engineering Specs */}
+          {isBay && (
+            <div className="bg-white rounded-2xl border border-teal-200 p-6 space-y-4 shadow-sm">
+              <h3 className="text-base font-bold text-navy-900 brand-font flex items-center space-x-2">
+                <Zap className="w-4 h-4 text-teal-600" />
+                <span>Substation Interconnection & Evacuation Bay Details</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                  <span className="text-slate-500 block text-[11px]">Substation Busbar Voltage</span>
+                  <span className="font-extrabold text-navy-900 text-sm">{listing.substationVoltageKv || 110} kV Class</span>
+                </div>
+                <div className="p-3 bg-teal-50/50 rounded-xl border border-teal-100">
+                  <span className="text-slate-500 block text-[11px]">Sanctioned Evacuation Capacity</span>
+                  <span className="font-extrabold text-teal-700 text-sm">{listing.bayCapacityMw || listing.availableCapacityMw} MW Injection</span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl sm:col-span-2">
+                  <span className="text-slate-500 block text-[11px]">Substation Name & Jurisdictional STU/CTU</span>
+                  <span className="font-bold text-slate-800">
+                    {listing.isConfidential && !isNdaUnlocked
+                      ? '🔒 TANTRANSCO / TSTRANSCO Substation (Feeder name locked pending NDA)'
+                      : (listing.substationDetails || `${listing.state} Transmission Substation`)
+                    }
+                  </span>
+                </div>
+              </div>
+              <div className="p-3.5 bg-slate-50 rounded-xl text-xs text-slate-600 space-y-1">
+                <div className="font-bold text-slate-800">Bay Readiness & Protection Protocol:</div>
+                <p>Equipped with CT/PT metering units, SF6 circuit breakers, numerical distance relays, and SCADA connectivity compatible with State Load Despatch Centre (SLDC).</p>
+              </div>
+            </div>
+          )}
+
+          {/* Renewable Land Parcel Specs */}
+          {isLand && (
+            <div className="bg-white rounded-2xl border border-emerald-200 p-6 space-y-4 shadow-sm">
+              <h3 className="text-base font-bold text-navy-900 brand-font flex items-center space-x-2">
+                <FileCheck2 className="w-4 h-4 text-emerald-600" />
+                <span>Renewable Energy Land Parcel & Park Due Diligence</span>
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                  <span className="text-slate-500 block text-[11px]">Contiguous Land Bank</span>
+                  <span className="font-extrabold text-emerald-800 text-sm">{listing.landAreaAcres || 250} Clear-Title Acres</span>
+                </div>
+                <div className="p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                  <span className="text-slate-500 block text-[11px]">Substation Proximity</span>
+                  <span className="font-extrabold text-navy-900 text-sm">Within 2.5 - 4.5 km of Substation</span>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-xl sm:col-span-2">
+                  <span className="text-slate-500 block text-[11px]">Title Due Diligence & Statutory Permissions</span>
+                  <span className="font-bold text-slate-800">
+                    {listing.regulatoryApprovals || '30-year search report completed. Non-agricultural (NA) conversion and Gram Panchayat NOC in place.'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Renewable Assets Specifics */}
-          {listing.renewableDetails && (
+          {listing.renewableDetails && !isBay && !isLand && (
             <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-sm">
               <h3 className="text-base font-bold text-navy-900 brand-font flex items-center space-x-2">
                 <Zap className="w-4 h-4 text-teal-600" />
@@ -483,6 +682,117 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* LOI & Standard Mutual NDA Modal */}
+      {ndaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-navy-950/70 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-5 shadow-2xl relative border border-slate-200">
+            <div className="flex justify-between items-start pb-3 border-b border-slate-100">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-2 bg-teal-50 text-teal-700 rounded-lg">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-navy-900 brand-font">
+                    Mutual Non-Disclosure & LOI Issuance
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Confidential dossier unlock for {listing.title} ({listing.listingCode})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setNdaModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 text-lg font-bold p-1"
+              >
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleExecuteNda} className="space-y-4 text-xs">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5 text-slate-600 leading-relaxed text-[11px]">
+                <strong className="text-slate-900 block font-bold">Standard Mutual NDA Framework:</strong>
+                <p>
+                  By executing this LOI, you agree that single-line diagrams, substation feeder numbers, and direct developer contact credentials remain strictly confidential and will be utilized solely for technical & tariff evaluation.
+                </p>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Corporate Buyer Legal Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. ABC Textiles Ltd / Hyderabad Data Center Pvt Ltd"
+                  value={ndaForm.companyName}
+                  onChange={(e) => setNdaForm({ ...ndaForm, companyName: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Signatory Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Full Name"
+                    value={ndaForm.contactPerson}
+                    onChange={(e) => setNdaForm({ ...ndaForm, contactPerson: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Designation
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={ndaForm.designatedRole}
+                    onChange={(e) => setNdaForm({ ...ndaForm, designatedRole: e.target.value })}
+                    className="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-2 pt-2 text-[11px] text-slate-700">
+                <input
+                  type="checkbox"
+                  id="ndaConsent"
+                  checked={ndaForm.acceptTerms}
+                  onChange={(e) => setNdaForm({ ...ndaForm, acceptTerms: e.target.checked })}
+                  className="accent-teal-600 rounded mt-0.5"
+                />
+                <label htmlFor="ndaConsent">
+                  We accept the Electricity Bazaar Standard Mutual NDA and certify that we are a legitimate HT power consumer or qualified project developer.
+                </label>
+              </div>
+
+              <div className="pt-3 flex justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setNdaModalOpen(false)}
+                  className="bg-slate-100 text-slate-700 font-semibold px-4 py-2 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRequestingNda || !ndaForm.acceptTerms}
+                  className="bg-navy-900 hover:bg-slate-800 text-teal-300 font-bold px-6 py-2.5 rounded-xl flex items-center space-x-1.5 transition disabled:opacity-50"
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>{isRequestingNda ? 'Executing NDA...' : 'Execute NDA & Unlock Dossier'}</span>
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

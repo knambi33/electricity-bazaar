@@ -70,6 +70,13 @@ export interface MarketplaceListing {
   projectStatus: string;
   regulatoryApprovals?: string | null;
   isFeatured: boolean;
+  isConfidential?: boolean;
+  ndaRequired?: boolean;
+  landAreaAcres?: number | null;
+  bayCapacityMw?: number | null;
+  substationVoltageKv?: number | null;
+  maskedLocation?: string;
+  isMaskedForPrivacy?: boolean;
   status: string;
   isDemoData: boolean;
   viewCount: number;

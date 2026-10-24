@@ -117,6 +117,11 @@ model MarketplaceListing {
   projectStatus        String               @default("OPERATIONAL") // OPERATIONAL, UNDER_CONSTRUCTION, READY_TO_BUILD, ADVANCED_DEVELOPMENT, FEASIBILITY_STAGE
   regulatoryApprovals  String?              // e.g. "In-principle STU connectivity obtained"
   isFeatured           Boolean              @default(false)
+  isConfidential       Boolean              @default(false)
+  ndaRequired          Boolean              @default(false)
+  landAreaAcres        Float?
+  bayCapacityMw        Float?
+  substationVoltageKv  Float?
   status               String               @default("DRAFT") // DRAFT, UNDER_REVIEW, PUBLISHED, SUSPENDED, EXPIRED, ARCHIVED
   isDemoData           Boolean              @default(false)
   viewCount            Int                  @default(0)
@@ -243,6 +248,8 @@ model Enquiry {
   requirementId       String?
   proposedCapacityMw  Float?
   message             String
+  isNdaRequested      Boolean            @default(false)
+  ndaAccepted         Boolean            @default(false)
   status              String             @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, SHARED_WITH_SUPPLIER, RESPONSE_RECEIVED, NEGOTIATION, CLOSED, WITHDRAWN
   buyerConsentGranted Boolean            @default(true)
   createdAt           DateTime           @default(now())

@@ -96,6 +96,23 @@ class ApiService {
     return this.request<MarketplaceListing>(`/listings/${idOrSlug}`);
   }
 
+  async getStateCounts(): Promise<Record<string, any>> {
+    return this.request<Record<string, any>>("/listings/state-counts");
+  }
+
+  async requestNdaUnlock(listingId: string, payload: {
+    corporateEntityName: string;
+    designatedSignatory: string;
+    companyPanGst: string;
+    intentionScope?: string;
+    ndaTermsAccepted: boolean;
+  }): Promise<any> {
+    return this.request<any>(`/listings/${listingId}/request-nda`, {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  }
+
   async createListing(data: any): Promise<MarketplaceListing> {
     return this.request<MarketplaceListing>("/listings", {
       method: "POST",

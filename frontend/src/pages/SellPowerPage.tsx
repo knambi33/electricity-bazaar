@@ -7,7 +7,8 @@ import {
   Upload, 
   FileCheck, 
   Building2,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -34,7 +35,13 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
     regulatoryApprovals: 'TANGEDCO grid parallel operation sanction and CEIG statutory safety approvals on record.',
     technology: 'Hybrid: 9 MW Solar TopCon Bifacial + 6 MW Wind Gamesa G97 2.0 MW WTGs',
     cuFactorPercent: 36.4,
-    captiveStructureInfo: 'Structured SPV compliant with Electricity Rules 2005 (26% equity holding and 51% proportional consumption).'
+    captiveStructureInfo: 'Structured SPV compliant with Electricity Rules 2005 (26% equity holding and 51% proportional consumption).',
+    // New fields
+    isConfidential: false,
+    ndaRequired: false,
+    substationVoltageKv: 110,
+    bayCapacityMw: 25.0,
+    landAreaAcres: 150.0
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,6 +67,11 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
         substationDetails: formData.substationDetails,
         projectStatus: formData.projectStatus,
         regulatoryApprovals: formData.regulatoryApprovals,
+        isConfidential: formData.isConfidential,
+        ndaRequired: formData.ndaRequired,
+        bayCapacityMw: formData.category === 'SUBSTATION_BAY' ? formData.bayCapacityMw : undefined,
+        substationVoltageKv: formData.category === 'SUBSTATION_BAY' ? formData.substationVoltageKv : undefined,
+        landAreaAcres: formData.category === 'LAND_PARCEL' ? formData.landAreaAcres : undefined,
         renewableDetails: {
           technology: formData.technology,
           cuFactorPercent: formData.cuFactorPercent,
@@ -90,7 +102,7 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
           List Power Supply & Renewable Energy Opportunities
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
-          Reach qualified commercial and industrial consumers actively seeking solar, wind, hybrid, and captive power across <strong>Tamil Nadu</strong>, <strong>Telangana</strong>, and India.
+          Reach qualified commercial and industrial consumers actively seeking solar, wind, hybrid, <strong>evacuation substation bays</strong>, and <strong>land parcels</strong> across <strong>Tamil Nadu</strong>, <strong>Telangana</strong>, <strong>Puducherry</strong>, and India.
         </p>
       </div>
 
@@ -158,6 +170,8 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
                   <option value="WIND_POWER">Wind Power</option>
                   <option value="HYBRID_RENEWABLE">Hybrid Renewable (Solar + Wind)</option>
                   <option value="RTC_FIRM_POWER">Round-The-Clock (RTC) Firm Clean Power</option>
+                  <option value="SUBSTATION_BAY">⚡ Evacuation Bay & Substation Interconnection</option>
+                  <option value="LAND_PARCEL">🏞 Renewable Land Bank & Park Parcel</option>
                   <option value="BATTERY_STORAGE">Battery Energy Storage (BESS)</option>
                   <option value="PUMPED_HYDRO_STORAGE">Pumped Hydro Storage (PSP)</option>
                 </select>
@@ -172,11 +186,12 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
                   onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 >
-                  <option value="Tamil Nadu">Tamil Nadu (TNERC) — Pilot Focus</option>
-                  <option value="Telangana">Telangana (TSERC) — Pilot Focus</option>
-                  <option value="Gujarat">Gujarat (GERC)</option>
-                  <option value="Rajasthan">Rajasthan (RERC)</option>
-                  <option value="Maharashtra">Maharashtra (MERC)</option>
+                  <option value="Tamil Nadu">Tamil Nadu (TNERC / TANGEDCO) — Pilot Focus</option>
+                  <option value="Telangana">Telangana (TSERC / TSSPDCL) — Pilot Focus</option>
+                  <option value="Puducherry">Puducherry (JERC / PED) — Pilot Focus</option>
+                  <option value="Gujarat">Gujarat (GERC / GUVNL)</option>
+                  <option value="Rajasthan">Rajasthan (RERC / Discoms)</option>
+                  <option value="Maharashtra">Maharashtra (MERC / MSEDCL)</option>
                 </select>
               </div>
 
@@ -192,6 +207,52 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 />
               </div>
+
+              {/* Substation Bay specific inputs */}
+              {formData.category === 'SUBSTATION_BAY' && (
+                <>
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Substation Voltage Class (kV)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 33, 110, 132, 230"
+                      value={formData.substationVoltageKv}
+                      onChange={(e) => setFormData({ ...formData, substationVoltageKv: parseFloat(e.target.value) })}
+                      className="w-full bg-teal-50 border border-teal-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Bay Evacuation Capacity (MW)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 25, 40"
+                      value={formData.bayCapacityMw}
+                      onChange={(e) => setFormData({ ...formData, bayCapacityMw: parseFloat(e.target.value) })}
+                      className="w-full bg-teal-50 border border-teal-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Land Parcel specific inputs */}
+              {formData.category === 'LAND_PARCEL' && (
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Total Contiguous Land Bank (Acres)
+                  </label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 250"
+                    value={formData.landAreaAcres}
+                    onChange={(e) => setFormData({ ...formData, landAreaAcres: parseFloat(e.target.value) })}
+                    className="w-full bg-emerald-50 border border-emerald-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -255,7 +316,7 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
                   <option value="GROUP_CAPTIVE">Group Captive (26% Equity / 0 CSS)</option>
                   <option value="THIRD_PARTY_OPEN_ACCESS">Third-Party Open Access</option>
                   <option value="ENERGY_STORAGE_SERVICE_AGREEMENT">Energy Storage (ESSA)</option>
-                  <option value="CAPEX_SALE">Turnkey Capex</option>
+                  <option value="CAPEX_SALE">Turnkey Capex / Land Lease</option>
                 </select>
               </div>
 
@@ -268,8 +329,8 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
                   onChange={(e) => setFormData({ ...formData, interconnectionType: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 >
-                  <option value="STU_INTRA_STATE">STU Intra-State Grid</option>
-                  <option value="CTU_INTER_STATE">CTU Inter-State Grid</option>
+                  <option value="STU_INTRA_STATE">STU Intra-State Grid (TANTRANSCO / TSTRANSCO / PED)</option>
+                  <option value="CTU_INTER_STATE">CTU Inter-State Grid (POWERGRID)</option>
                   <option value="BEHIND_THE_METER">Behind the Meter</option>
                 </select>
               </div>
@@ -301,6 +362,33 @@ export const SellPowerPage: React.FC<SellPowerPageProps> = ({ setCurrentView }) 
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-none"
                 />
               </div>
+            </div>
+          </div>
+
+          {/* Section 3: Confidentiality & Mutual NDA Protection */}
+          <div className="p-4 bg-slate-900 text-white rounded-2xl border border-slate-800 space-y-3">
+            <div className="flex items-center space-x-2 text-teal-400 font-bold text-xs">
+              <Lock className="w-4 h-4" />
+              <span>Inquiry Brokering & Confidentiality Protection</span>
+            </div>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Enable this toggle if you wish to mask exact GPS coordinates, substation feeder numbers, and direct contacts from unverified visitors. Corporate buyers will be prompted to issue a formal LOI and sign the Electricity Bazaar Mutual NDA before unlocking.
+            </p>
+            <div className="flex items-center space-x-3 pt-1">
+              <input
+                type="checkbox"
+                id="confidentialToggle"
+                checked={formData.isConfidential}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  isConfidential: e.target.checked,
+                  ndaRequired: e.target.checked 
+                })}
+                className="w-4 h-4 accent-teal-500 rounded"
+              />
+              <label htmlFor="confidentialToggle" className="text-xs font-bold text-teal-200 cursor-pointer">
+                Protect Asset: Require Mutual NDA / LOI prior to disclosing exact coordinates and SLD
+              </label>
             </div>
           </div>
 

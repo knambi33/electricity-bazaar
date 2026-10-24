@@ -532,6 +532,193 @@ async function main() {
     }
   });
 
+  // Listing 7: Substation Evacuation Bay in Tamil Nadu (Kayathar 110/33 kV)
+  const listingBayTN = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-BAY-08",
+      organisationId: sellerOrgTN.id,
+      title: "DEMO: 40 MW Dedicated 110/33 kV Substation Evacuation Bay Allocation - Kayathar Wind-Solar Hub",
+      slug: "demo-40-mw-substation-evacuation-bay-kayathar-tamil-nadu",
+      category: "SUBSTATION_BAY",
+      commercialModel: "INFRA_LEASE",
+      state: "Tamil Nadu",
+      projectLocation: "Kayathar Substation Complex, Tirunelveli District, Tamil Nadu",
+      totalCapacityMw: 40.0,
+      availableCapacityMw: 40.0,
+      bayCapacityMw: 40.0,
+      substationVoltageKv: 110.0,
+      indicativePricePerKwh: 0.15, // Wheeling / bay facilitation fee
+      priceBasisConditions: "Dedicated 110 kV line bay sanctioned by TANTRANSCO with single-line telemetry and RTU connection.",
+      contractDurationYears: 25,
+      expectedAvailabilityDate: new Date("2026-11-01"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "110/33 kV TANTRANSCO Substation Kayathar; bay structure erected, breaker & CT/PT ready for testing.",
+      projectStatus: "READY_TO_BUILD",
+      regulatoryApprovals: "In-principle grid connectivity & line bay sanction order issued by TANTRANSCO Chief Engineer / Grid Operation.",
+      isFeatured: true,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 156
+    }
+  });
+
+  // Listing 8: Substation Feeder Bay in Telangana (Jadcherla 132/33 kV)
+  const listingBayTG = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TG-BAY-09",
+      organisationId: sellerOrgTG.id,
+      title: "DEMO: 25 MW / 33 kV Sanctioned Feeder Bay Allocation - Jadcherla 132/33 kV Substation",
+      slug: "demo-25-mw-feeder-bay-allocation-jadcherla-telangana",
+      category: "SUBSTATION_BAY",
+      commercialModel: "INFRA_LEASE",
+      state: "Telangana",
+      projectLocation: "Jadcherla 132/33 kV Substation Corridor, Mahbubnagar District, Telangana",
+      totalCapacityMw: 25.0,
+      availableCapacityMw: 25.0,
+      bayCapacityMw: 25.0,
+      substationVoltageKv: 132.0,
+      indicativePricePerKwh: 0.18,
+      priceBasisConditions: "Dedicated 33 kV outgoing line bay sanctioned under TSTRANSCO Open Access Scheme.",
+      contractDurationYears: 20,
+      expectedAvailabilityDate: new Date("2026-12-15"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "TSTRANSCO 132/33 kV Grid Substation, Jadcherla, Mahbubnagar.",
+      projectStatus: "READY_TO_BUILD",
+      regulatoryApprovals: "TSTRANSCO Technical Feasibility Report (TFR) approved; bay lease agreement template ready.",
+      isFeatured: true,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 134
+    }
+  });
+
+  // Listing 9: Dedicated Industrial Feeder Bay in Puducherry (Sedarapet 110/22 kV)
+  const listingBayPY = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-PY-BAY-10",
+      organisationId: sellerOrgTN.id,
+      title: "DEMO: 15 MVA / 22 kV Dedicated Industrial Evacuation & Drawal Bay - PED Sedarapet Substation",
+      slug: "demo-15-mva-industrial-bay-allocation-sedarapet-puducherry",
+      category: "SUBSTATION_BAY",
+      commercialModel: "INFRA_LEASE",
+      state: "Puducherry",
+      projectLocation: "Sedarapet Industrial Estate Substation Corridor, Union Territory of Puducherry",
+      totalCapacityMw: 15.0,
+      availableCapacityMw: 15.0,
+      bayCapacityMw: 15.0,
+      substationVoltageKv: 22.0,
+      indicativePricePerKwh: 0.12,
+      priceBasisConditions: "Dedicated 22 kV breaker bay at PED 110/22 kV Substation for Sedarapet HT industrial off-taker or rooftop aggregate injection.",
+      contractDurationYears: 15,
+      expectedAvailabilityDate: new Date("2026-10-30"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "PED 110/22 kV Substation Sedarapet, feeder cubicle 22kV-F6 ready for line stringing.",
+      projectStatus: "OPERATIONAL",
+      regulatoryApprovals: "Electricity Department Puducherry (PED) Division-I technical clearance on record.",
+      isFeatured: true,
+      isConfidential: false,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 98
+    }
+  });
+
+  // Listing 10: High-Wind & Solar Land Bank in Tamil Nadu (250 Acres)
+  const listingLandTN = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-LND-12",
+      organisationId: sellerOrgTN.id,
+      title: "DEMO: 250 Acres Contiguous High-Wind & Solar Park Land Parcel - Radhapuram Corridor",
+      slug: "demo-250-acres-wind-solar-land-radhapuram-tamil-nadu",
+      category: "LAND_PARCEL",
+      commercialModel: "LAND_SALE_LEASE",
+      state: "Tamil Nadu",
+      projectLocation: "Radhapuram Taluk, Tirunelveli District, Tamil Nadu (4.2 km to 230 kV Substation)",
+      totalCapacityMw: 50.0, // ~50 MW Solar or 25 MW Wind
+      availableCapacityMw: 50.0,
+      landAreaAcres: 250.0,
+      indicativePricePerKwh: null, // Land rate
+      priceBasisConditions: "Long-term 30-year lease @ ₹32,000/acre/year with 5% escalation every 3 years, or outright clear title sale.",
+      contractDurationYears: 30,
+      expectedAvailabilityDate: new Date("2026-10-15"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "4.2 km from TANTRANSCO 230/110 kV Radhapuram Substation; right of way (RoW) survey complete.",
+      projectStatus: "READY_TO_BUILD",
+      regulatoryApprovals: "Pattadar passbooks, 30-year encumbrance certificates (EC), and non-agricultural (NA) conversion clearance verified.",
+      isFeatured: true,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 215
+    }
+  });
+
+  // Listing 11: Solar Park Land Parcel in Telangana (120 Acres)
+  const listingLandTG = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TG-LND-13",
+      organisationId: sellerOrgTG.id,
+      title: "DEMO: 120 Acres Contiguous Flat Terrain Solar Land - Mahbubnagar Green Corridor",
+      slug: "demo-120-acres-solar-land-mahbubnagar-telangana",
+      category: "LAND_PARCEL",
+      commercialModel: "LAND_SALE_LEASE",
+      state: "Telangana",
+      projectLocation: "Jadcherla / Mahbubnagar Highway Corridor, Telangana",
+      totalCapacityMw: 25.0,
+      availableCapacityMw: 25.0,
+      landAreaAcres: 120.0,
+      priceBasisConditions: "Long-term lease @ ₹28,000/acre/year. Clear single-owner title, zero shading, flat red soil terrain.",
+      contractDurationYears: 25,
+      expectedAvailabilityDate: new Date("2026-11-01"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "2.8 km to TSTRANSCO 33 kV rural feeder with spare evacuation margin.",
+      projectStatus: "READY_TO_BUILD",
+      regulatoryApprovals: "TSIIC green park clearance and Dharani revenue land clearance on file.",
+      isFeatured: false,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 167
+    }
+  });
+
+  // Listing 12: Industrial Green Micro-Park Land in Puducherry (45 Acres)
+  const listingLandPY = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-PY-LND-14",
+      organisationId: sellerOrgTN.id,
+      title: "DEMO: 45 Acres Industrial Renewable & Captive Park Land Parcel - Sedarapet PIPDIC Belt",
+      slug: "demo-45-acres-industrial-renewable-park-sedarapet-puducherry",
+      category: "LAND_PARCEL",
+      commercialModel: "LAND_SALE_LEASE",
+      state: "Puducherry",
+      projectLocation: "PIPDIC Industrial Corridor, Sedarapet, Union Territory of Puducherry",
+      totalCapacityMw: 10.0,
+      availableCapacityMw: 10.0,
+      landAreaAcres: 45.0,
+      priceBasisConditions: "PIPDIC 30-year renewable leasehold transfer with pre-approved industrial electricity drawal rights.",
+      contractDurationYears: 30,
+      expectedAvailabilityDate: new Date("2026-11-10"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "Direct boundary frontage on PED 22 kV HT transmission line; 1.5 km to Sedarapet 110 kV Substation.",
+      projectStatus: "READY_TO_BUILD",
+      regulatoryApprovals: "PIPDIC Industrial Board allotment and Puducherry Town & Country Planning non-objection certificate.",
+      isFeatured: true,
+      isConfidential: false,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: true,
+      viewCount: 140
+    }
+  });
+
   // 4. Create an active Enquiry between Buyer and Seller
   const demoEnquiry = await prisma.enquiry.create({
     data: {

@@ -13,7 +13,9 @@ const createEnquirySchema = z.object({
   message: z.string().min(10),
   buyerConsentGranted: z.boolean().refine(val => val === true, {
     message: "Explicit buyer consent is required to transmit procurement enquiry"
-  })
+  }),
+  isNdaRequested: z.boolean().optional().default(false),
+  ndaAccepted: z.boolean().optional().default(false)
 });
 
 // Protected: Submit an enquiry to a supplier
@@ -48,13 +50,17 @@ router.post("/", authenticateToken, async (req: Request, res: Response): Promise
         proposedCapacityMw: validated.proposedCapacityMw,
         message: validated.message,
         buyerConsentGranted: validated.buyerConsentGranted,
-        status: "SUBMITTED",
+        isNdaRequested: validated.isNdaRequested,
+        ndaAccepted: validated.ndaAccepted,
+        status: validated.ndaAccepted ? "NDA_ACCEPTED" : "SUBMITTED",
         messages: {
           create: {
             senderUserId: req.user!.id,
             senderOrgId: buyerOrgId,
             senderName: req.user!.fullName,
-            messageText: validated.message
+            messageText: validated.isNdaRequested
+              ? `[CONFIDENTIAL DISCLOSURE / LOI & NDA ACCEPTED]: ${validated.message}`
+              : validated.message
           }
         }
       },

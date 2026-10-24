@@ -15,10 +15,14 @@ import {
   Sun,
   Wind,
   BatteryCharging,
-  Zap
+  Zap,
+  MapPin,
+  Lock,
+  Compass
 } from 'lucide-react';
 import { api } from '../services/api';
 import { MarketplaceListing } from '../types';
+import { IndiaPowerMap } from '../components/IndiaPowerMap';
 
 interface MarketplaceExplorerProps {
   onSelectListing: (listingId: string) => void;
@@ -31,6 +35,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [showPowerMap, setShowPowerMap] = useState(true);
 
   // Filters
   const [activeCategoryTab, setActiveCategoryTab] = useState<string>('ALL');
@@ -49,6 +54,8 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
 
   const categoryTabs = [
     { id: 'ALL', label: 'All Opportunities' },
+    { id: 'SUBSTATION_BAY', label: '⚡ Evacuation Bays (33/110/132/230 kV)' },
+    { id: 'LAND_PARCEL', label: '🏞 Land Parcels & Parks' },
     { id: 'SOLAR_POWER', label: 'Solar Power' },
     { id: 'WIND_POWER', label: 'Wind Power' },
     { id: 'HYBRID_RENEWABLE', label: 'Hybrid Renewable' },
@@ -135,20 +142,31 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
         <div>
           <div className="inline-flex items-center space-x-1.5 text-xs font-bold text-teal-600 uppercase tracking-wider mb-1">
             <Zap className="w-3.5 h-3.5" />
-            <span>Open Energy Sourcing</span>
+            <span>Open Energy Sourcing & Infrastructure</span>
           </div>
           <h1 className="text-3xl font-extrabold text-navy-900 brand-font">Marketplace Explorer</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Discover verified solar, wind, hybrid, battery storage, and group captive power opportunities across India.
+            Discover verified solar, wind, hybrid, battery storage, <strong>substation evacuation bays</strong>, and <strong>land parks</strong> across Tamil Nadu, Telangana, Puducherry & India.
           </p>
         </div>
 
         <div className="flex items-center space-x-2">
           <button
+            onClick={() => setShowPowerMap(!showPowerMap)}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm border ${
+              showPowerMap 
+                ? 'bg-navy-900 text-teal-300 border-navy-800' 
+                : 'bg-white text-navy-900 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <Compass className="w-3.5 h-3.5 text-teal-400" />
+            <span>{showPowerMap ? 'Hide Power Map' : '🗺️ View India Power Map'}</span>
+          </button>
+          <button
             onClick={() => setCurrentView('wizard')}
             className="bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-sm"
           >
-            <span>★ Bill-to-Procurement Wizard</span>
+            <span>★ Bill Diagnostic Wizard</span>
           </button>
           <button
             onClick={handleShare}
@@ -160,6 +178,20 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
           </button>
         </div>
       </div>
+
+      {/* Interactive India Power Map Section */}
+      {showPowerMap && (
+        <div className="transition-all duration-300">
+          <IndiaPowerMap
+            selectedState={selectedState}
+            onSelectState={(state) => {
+              setSelectedState(state);
+              setCurrentPage(1);
+            }}
+            setCurrentView={setCurrentView}
+          />
+        </div>
+      )}
 
       {/* Category Tabs */}
       <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-thin">
@@ -216,7 +248,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                 type="text"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
-                placeholder="Title, developer, location..."
+                placeholder="Title, bay, park, developer..."
                 className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
               />
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
@@ -233,12 +265,16 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
               onChange={(e) => { setSelectedState(e.target.value); setCurrentPage(1); }}
               className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
             >
-              <option value="">All Indian States</option>
+              <option value="">All Indian States & UTs</option>
               <option value="Tamil Nadu">Tamil Nadu (TNERC) — Pilot</option>
               <option value="Telangana">Telangana (TSERC) — Pilot</option>
+              <option value="Puducherry">Puducherry (JERC / PED) — Pilot</option>
               <option value="Gujarat">Gujarat (GERC)</option>
               <option value="Rajasthan">Rajasthan (RERC)</option>
               <option value="Maharashtra">Maharashtra (MERC)</option>
+              <option value="Karnataka">Karnataka (KERC)</option>
+              <option value="Andhra Pradesh">Andhra Pradesh (APERC)</option>
+              <option value="Madhya Pradesh">Madhya Pradesh (MPERC)</option>
             </select>
           </div>
 
@@ -256,7 +292,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
               <option value="GROUP_CAPTIVE">Group Captive (26% Eq / 0 CSS)</option>
               <option value="THIRD_PARTY_OPEN_ACCESS">Third-Party Open Access</option>
               <option value="ENERGY_STORAGE_SERVICE_AGREEMENT">Energy Storage (ESSA)</option>
-              <option value="CAPEX_SALE">Turnkey Capex</option>
+              <option value="CAPEX_SALE">Turnkey Capex / Land Lease</option>
             </select>
           </div>
 
@@ -271,8 +307,8 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
               className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
             >
               <option value="">Any Interconnection</option>
-              <option value="STU_INTRA_STATE">STU Intra-State Grid</option>
-              <option value="CTU_INTER_STATE">CTU Inter-State Grid</option>
+              <option value="STU_INTRA_STATE">STU Intra-State Grid (TANTRANSCO / TSTRANSCO / PED)</option>
+              <option value="CTU_INTER_STATE">CTU Inter-State Grid (POWERGRID)</option>
             </select>
           </div>
 
@@ -311,7 +347,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
           {/* Top Sort & Count Bar */}
           <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex flex-wrap justify-between items-center text-xs">
             <span className="text-slate-600 font-medium">
-              Showing <strong>{listings.length}</strong> of <strong>{totalCount}</strong> published opportunities
+              Showing <strong>{listings.length}</strong> of <strong>{totalCount}</strong> published opportunities {selectedState && <span className="text-teal-600 font-bold">in {selectedState}</span>}
             </span>
             <div className="flex items-center space-x-2">
               <span className="text-slate-500">Sort by:</span>
@@ -341,7 +377,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
               <Zap className="w-8 h-8 text-slate-400 mx-auto" />
               <h3 className="text-base font-bold text-navy-900">No Listings Match Your Filters</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Try widening your capacity limits, removing state filters, or selecting "All Opportunities".
+                Try widening your capacity limits, clearing state filters, or switching to "All Opportunities".
               </p>
             </div>
           ) : (
@@ -349,6 +385,8 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
               {listings.map(listing => {
                 const isCompared = comparisonList.some(item => item.id === listing.id);
                 const isBookmarked = bookmarkedIds.includes(listing.id);
+                const isBay = listing.category === 'SUBSTATION_BAY';
+                const isLand = listing.category === 'LAND_PARCEL';
 
                 return (
                   <div
@@ -359,13 +397,29 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                     <div className="p-5">
                       {/* Top Badges */}
                       <div className="flex items-center justify-between gap-1 mb-2">
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
                           <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">
                             DEMO
                           </span>
                           <span className="text-[10px] font-mono text-slate-400">
                             {listing.listingCode}
                           </span>
+                          {listing.isConfidential && (
+                            <span className="text-[9px] font-bold bg-slate-900 text-teal-300 px-1.5 py-0.5 rounded flex items-center space-x-1 border border-slate-700">
+                              <Lock className="w-2.5 h-2.5 text-teal-400" />
+                              <span>NDA</span>
+                            </span>
+                          )}
+                          {isBay && (
+                            <span className="text-[9px] font-bold bg-teal-100 text-teal-800 px-1.5 py-0.5 rounded uppercase">
+                              EVACUATION BAY
+                            </span>
+                          )}
+                          {isLand && (
+                            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded uppercase">
+                              RE LAND
+                            </span>
+                          )}
                         </div>
                         <button
                           onClick={(e) => toggleBookmark(listing.id, e)}
@@ -388,16 +442,40 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                       {/* Capacity & Price pill */}
                       <div className="mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">Available</span>
-                          <span className="font-extrabold text-navy-900 text-sm">
-                            {listing.availableCapacityMw} MW
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                            {isLand ? 'Land Bank' : isBay ? 'Bay Capacity' : 'Available'}
                           </span>
+                          <span className="font-extrabold text-navy-900 text-sm">
+                            {isLand 
+                              ? `${listing.landAreaAcres || listing.availableCapacityMw * 4} Acres`
+                              : isBay 
+                              ? `${listing.bayCapacityMw || listing.availableCapacityMw} MW`
+                              : `${listing.availableCapacityMw} MW`
+                            }
+                          </span>
+                          {isBay && listing.substationVoltageKv && (
+                            <span className="block text-[10px] text-teal-700 font-bold">
+                              @{listing.substationVoltageKv} kV
+                            </span>
+                          )}
                         </div>
                         <div className="text-right">
-                          <span className="text-slate-400 block text-[9px] uppercase font-bold">PPA Tariff</span>
+                          <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                            {isLand ? 'Terms' : isBay ? 'Structure' : 'PPA Tariff'}
+                          </span>
                           <span className="font-extrabold text-teal-600 text-sm">
-                            {listing.indicativePricePerKwh ? `₹${listing.indicativePricePerKwh.toFixed(2)}` : 'Custom'}
-                            <span className="text-[9px] font-normal text-slate-400">/u</span>
+                            {isLand ? (
+                              'Long Lease'
+                            ) : isBay ? (
+                              'Dedicated Bay'
+                            ) : listing.indicativePricePerKwh ? (
+                              <>
+                                ₹{listing.indicativePricePerKwh.toFixed(2)}
+                                <span className="text-[9px] font-normal text-slate-400">/u</span>
+                              </>
+                            ) : (
+                              'Custom'
+                            )}
                           </span>
                         </div>
                       </div>
