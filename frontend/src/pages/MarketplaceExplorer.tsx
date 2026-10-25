@@ -343,7 +343,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
         </div>
 
         {/* Listings Grid */}
-        <div className="lg:col-span-3 space-y-4">
+        <div id="marketplace-listings-grid" className="lg:col-span-3 space-y-4">
           {/* Top Sort & Count Bar */}
           <div className="bg-white rounded-xl border border-slate-200 px-4 py-2.5 flex flex-wrap justify-between items-center text-xs">
             <span className="text-slate-600 font-medium">
