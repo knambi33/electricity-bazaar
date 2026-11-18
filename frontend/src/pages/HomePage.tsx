@@ -117,32 +117,6 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
                 List Your Offering
               </button>
             </div>
-
-            {/* Festive Deepavali Greetings Card */}
-            <div className="mt-8 max-w-2xl mx-auto bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 border border-amber-400/40 rounded-2xl p-4 sm:p-5 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left shadow-lg shadow-amber-500/10">
-              <div className="flex items-center space-x-3.5">
-                <span className="text-3xl select-none animate-pulse">🪔</span>
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center justify-center sm:justify-start space-x-1">
-                    <Sparkles className="w-3 h-3 text-amber-300" />
-                    <span>Festival of Lights Wishes</span>
-                  </div>
-                  <h3 className="text-sm sm:text-base font-extrabold text-white brand-font">
-                    Happy Deepavali to All Our Readers & Subscribers! ✨
-                  </h3>
-                  <p className="text-xs text-amber-100/80 mt-0.5 leading-relaxed">
-                    May this festive season bring boundless energy, commercial prosperity, and green sustainability to your operations!
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setCurrentView('marketplace')}
-                className="bg-amber-400 hover:bg-amber-300 text-navy-950 font-black px-3.5 py-2 rounded-xl text-xs whitespace-nowrap transition shadow-md shadow-amber-500/20 flex items-center space-x-1"
-              >
-                <span>View Offers</span>
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
           </div>
 
           {/* Quick Search Panel */}
@@ -572,12 +546,7 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
           6. NEWSLETTER & ADVISORY CALL-BACK
       ============================================================ */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gradient-to-br from-teal-50 via-amber-50/40 to-teal-50 border border-teal-200 rounded-3xl p-8 sm:p-10 text-center space-y-4 shadow-sm relative overflow-hidden">
-          <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-bold border border-amber-300 mb-1">
-            <span>🪔</span>
-            <span>Happy Deepavali to All Our Readers & Subscribers!</span>
-            <span>✨</span>
-          </div>
+        <div className="bg-teal-50 border border-teal-200 rounded-3xl p-8 sm:p-10 text-center space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center mx-auto shadow-md shadow-teal-500/20">
             <Zap className="w-6 h-6 fill-current" />
           </div>
@@ -591,7 +560,7 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
           {leadSubmitted ? (
             <div className="p-4 bg-teal-100 text-teal-900 rounded-xl text-xs font-bold max-w-md mx-auto flex items-center justify-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-teal-600" />
-              <span>🪔 Shubh Deepavali! Thank you for subscribing. An energy procurement advisor will reach out to you within 24 hours.</span>
+              <span>Thank you! An energy procurement advisor will reach out to you within 24 hours.</span>
             </div>
           ) : (
             <form onSubmit={handleLeadSubmit} className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto pt-2">
@@ -600,14 +569,14 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
                 required
                 value={leadEmail}
                 onChange={(e) => setLeadEmail(e.target.value)}
-                placeholder="Enter corporate email address to subscribe"
+                placeholder="Enter corporate email address"
                 className="flex-1 bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-none"
               />
               <button
                 type="submit"
                 className="bg-navy-900 hover:bg-navy-800 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition"
               >
-                Subscribe & Request Advisory
+                Request Advisory Contact
               </button>
             </form>
           )}

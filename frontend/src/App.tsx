@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
-import { DeepavaliBanner } from './components/DeepavaliBanner';
 import { HomePage } from './pages/HomePage';
 import { MarketplaceExplorer } from './pages/MarketplaceExplorer';
 import { ListingDetailPage } from './pages/ListingDetailPage';
@@ -93,11 +92,6 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
-      <DeepavaliBanner onExplore={() => {
-        setCurrentView('marketplace');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }} />
-
       <Navbar
         currentView={currentView}
         setCurrentView={(view) => {
