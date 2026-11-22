@@ -18,6 +18,7 @@ import {
   CampaignSignup,
   RooftopApplicantType
 } from "../types";
+import { FALLBACK_LISTINGS, FALLBACK_TENDERS } from "./fallbackData";
 
 const API_BASE = (((import.meta as any).env?.VITE_API_BASE_URL as string) || "/api/v1").replace(/\/$/, "");
 
@@ -85,19 +86,134 @@ class ApiService {
 
   // --- Marketplace Listings ---
   async getListings(params: Record<string, string> = {}): Promise<{ data: MarketplaceListing[]; meta: any }> {
-    const query = new URLSearchParams(params).toString();
-    const url = `/listings${query ? `?${query}` : ""}`;
-    const res = await fetch(`${API_BASE}${url}`);
-    const json = await res.json();
-    return { data: json.data || [], meta: json.meta || {} };
+    try {
+      const query = new URLSearchParams(params).toString();
+      const url = `/listings${query ? `?${query}` : ""}`;
+      const res = await fetch(`${API_BASE}${url}`);
+      const contentType = res.headers.get("content-type");
+      if (res.ok && contentType && contentType.includes("application/json")) {
+        const json = await res.json();
+        if (json.data && Array.isArray(json.data) && json.data.length > 0) {
+          return { data: json.data, meta: json.meta || {} };
+        }
+      }
+    } catch (err) {
+      console.warn("Backend listings API unreachable or static hosting active, using marketplace listings fallback:", err);
+    }
+
+    // Client-side fallback filtering
+    let filtered = [...FALLBACK_LISTINGS];
+
+    if (params.category && params.category !== 'ALL') {
+      filtered = filtered.filter(l => l.category === params.category);
+    }
+    if (params.state) {
+      filtered = filtered.filter(l => l.state?.toLowerCase() === params.state.toLowerCase());
+    }
+    if (params.commercialModel) {
+      filtered = filtered.filter(l => l.commercialModel === params.commercialModel);
+    }
+    if (params.interconnectionType) {
+      filtered = filtered.filter(l => l.interconnectionType === params.interconnectionType);
+    }
+    if (params.projectStatus) {
+      filtered = filtered.filter(l => l.projectStatus === params.projectStatus);
+    }
+    if (params.minCapacityMw) {
+      const min = parseFloat(params.minCapacityMw);
+      if (!isNaN(min)) filtered = filtered.filter(l => (l.availableCapacityMw || 0) >= min);
+    }
+    if (params.maxCapacityMw) {
+      const max = parseFloat(params.maxCapacityMw);
+      if (!isNaN(max)) filtered = filtered.filter(l => (l.availableCapacityMw || 0) <= max);
+    }
+    if (params.search) {
+      const q = params.search.toLowerCase().trim();
+      filtered = filtered.filter(l =>
+        l.title?.toLowerCase().includes(q) ||
+        l.projectLocation?.toLowerCase().includes(q) ||
+        l.listingCode?.toLowerCase().includes(q) ||
+        l.state?.toLowerCase().includes(q) ||
+        l.category?.toLowerCase().includes(q) ||
+        l.organisation?.legalName?.toLowerCase().includes(q) ||
+        l.organisation?.tradeName?.toLowerCase().includes(q)
+      );
+    }
+
+    if (params.sort === 'CAPACITY_DESC') {
+      filtered.sort((a, b) => (b.availableCapacityMw || 0) - (a.availableCapacityMw || 0));
+    } else if (params.sort === 'CAPACITY_ASC') {
+      filtered.sort((a, b) => (a.availableCapacityMw || 0) - (b.availableCapacityMw || 0));
+    } else if (params.sort === 'PRICE_ASC') {
+      filtered.sort((a, b) => (a.indicativePricePerKwh || 999) - (b.indicativePricePerKwh || 999));
+    } else if (params.sort === 'VIEWS_DESC') {
+      filtered.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0));
+    }
+
+    const pageNum = Math.max(1, parseInt(params.page || '1', 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(params.limit || '12', 10) || 12));
+    const totalCount = filtered.length;
+    const totalPages = Math.ceil(totalCount / limitNum) || 1;
+    const skip = (pageNum - 1) * limitNum;
+    const paged = filtered.slice(skip, skip + limitNum);
+
+    return {
+      data: paged,
+      meta: {
+        page: pageNum,
+        limit: limitNum,
+        totalCount,
+        totalPages
+      }
+    };
   }
 
   async getListingDetails(idOrSlug: string): Promise<MarketplaceListing> {
-    return this.request<MarketplaceListing>(`/listings/${idOrSlug}`);
+    try {
+      const data = await this.request<MarketplaceListing>(`/listings/${idOrSlug}`);
+      if (data && data.id) return data;
+    } catch {
+      // Backend unavailable or static hosting
+    }
+
+    const fallback = FALLBACK_LISTINGS.find(
+      l => l.id === idOrSlug || l.slug === idOrSlug || l.listingCode?.toLowerCase() === idOrSlug.toLowerCase()
+    );
+    if (fallback) return fallback;
+
+    throw new Error(`Listing not found for id/slug: ${idOrSlug}`);
   }
 
   async getStateCounts(): Promise<Record<string, any>> {
-    return this.request<Record<string, any>>("/listings/state-counts");
+    try {
+      const data = await this.request<Record<string, any>>("/listings/state-counts");
+      if (data && Object.keys(data).length > 0) return data;
+    } catch {
+      // Backend unavailable or static hosting
+    }
+
+    const stateSummary: Record<string, any> = {};
+    for (const l of FALLBACK_LISTINGS) {
+      if (!l.state) continue;
+      if (!stateSummary[l.state]) {
+        stateSummary[l.state] = {
+          count: 0,
+          totalCapacityMw: 0,
+          availableCapacityMw: 0,
+          categories: {},
+          bayCount: 0,
+          landParcelCount: 0
+        };
+      }
+      const s = stateSummary[l.state];
+      s.count += 1;
+      s.totalCapacityMw += Number(l.totalCapacityMw || 0);
+      s.availableCapacityMw += Number(l.availableCapacityMw || 0);
+      s.categories[l.category] = (s.categories[l.category] || 0) + 1;
+      if (l.category === "SUBSTATION_BAY" || l.category === "EVACUATION_BAY") s.bayCount += 1;
+      if (l.category === "LAND_PARCEL" || l.category === "RENEWABLE_LAND") s.landParcelCount += 1;
+    }
+    return stateSummary;
   }
 
   async requestNdaUnlock(listingId: string, payload: {
@@ -248,8 +364,22 @@ class ApiService {
 
   // --- Tenders & Services ---
   async getTenders(params: Record<string, string> = {}): Promise<TenderOpportunity[]> {
-    const query = new URLSearchParams(params).toString();
-    return this.request<TenderOpportunity[]>(`/tenders${query ? `?${query}` : ""}`);
+    try {
+      const query = new URLSearchParams(params).toString();
+      const data = await this.request<TenderOpportunity[]>(`/tenders${query ? `?${query}` : ""}`);
+      if (data && Array.isArray(data) && data.length > 0) return data;
+    } catch {
+      // Fallback
+    }
+
+    let tenders = [...FALLBACK_TENDERS];
+    if (params.state) {
+      tenders = tenders.filter(t => t.state?.toLowerCase() === params.state.toLowerCase() || t.state === "Pan-India");
+    }
+    if (params.tenderType) {
+      tenders = tenders.filter(t => t.tenderType === params.tenderType);
+    }
+    return tenders;
   }
 
   async getServices(params: Record<string, string> = {}): Promise<ServiceListing[]> {
