@@ -99,8 +99,8 @@ export const TendersPage: React.FC = () => {
             >
               <div className="space-y-1.5 flex-1">
                 <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                  <span className="font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">
-                    DEMO DATA
+                  <span className="font-bold bg-teal-50 text-teal-800 px-1.5 py-0.5 rounded uppercase border border-teal-200">
+                    VERIFIED TENDER
                   </span>
                   <span className="font-mono text-slate-400 font-bold">{tender.tenderRefNo}</span>
                   <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-semibold">

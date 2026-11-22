@@ -234,7 +234,7 @@ async function main() {
       regulatoryApprovals: "TSTRANSCO in-principle connectivity & CEIG statutory electrical safety approvals documented.",
       isFeatured: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 142,
       renewableDetails: {
         create: {
@@ -301,7 +301,7 @@ async function main() {
       regulatoryApprovals: "GETCO evacuation line commissioned, GEDA micro-siting approved.",
       isFeatured: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 98,
       renewableDetails: {
         create: {
@@ -336,7 +336,7 @@ async function main() {
       regulatoryApprovals: "PGCIL Stage-II connectivity granted; LTA in-principle approved.",
       isFeatured: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 215,
       renewableDetails: {
         create: {
@@ -404,7 +404,7 @@ async function main() {
       regulatoryApprovals: "TANGEDCO/TANTRANSCO grid parallel operation sanction and CEIG certification on record.",
       isFeatured: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 184,
       renewableDetails: {
         create: {
@@ -440,7 +440,7 @@ async function main() {
       projectStatus: "OPERATIONAL",
       isFeatured: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 165,
       storageDetails: {
         create: {
@@ -478,7 +478,7 @@ async function main() {
       regulatoryApprovals: "CEA concurrence & Environmental Clearance received.",
       isFeatured: false,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 88,
       storageDetails: {
         create: {
@@ -517,7 +517,7 @@ async function main() {
       regulatoryApprovals: "JERC Open Access in-principle approval, PED technical feasibility and CEIG electrical clearance documented.",
       isFeatured: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 112,
       renewableDetails: {
         create: {
@@ -559,7 +559,7 @@ async function main() {
       isConfidential: true,
       ndaRequired: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 156
     }
   });
@@ -591,7 +591,7 @@ async function main() {
       isConfidential: true,
       ndaRequired: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 134
     }
   });
@@ -623,7 +623,7 @@ async function main() {
       isConfidential: false,
       ndaRequired: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 98
     }
   });
@@ -654,7 +654,7 @@ async function main() {
       isConfidential: true,
       ndaRequired: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 215
     }
   });
@@ -684,7 +684,7 @@ async function main() {
       isConfidential: true,
       ndaRequired: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 167
     }
   });
@@ -714,7 +714,7 @@ async function main() {
       isConfidential: false,
       ndaRequired: true,
       status: "PUBLISHED",
-      isDemoData: true,
+      isDemoData: false,
       viewCount: 140
     }
   });

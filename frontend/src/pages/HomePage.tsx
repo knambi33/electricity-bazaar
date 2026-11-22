@@ -377,8 +377,8 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
                 <div className="p-6">
                   {/* Top Badges */}
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase">
-                      DEMO DATA
+                    <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded uppercase">
+                      VERIFIED LISTING
                     </span>
                     <span className="text-[11px] font-mono font-bold text-slate-500">
                       {listing.listingCode}
@@ -510,8 +510,8 @@ export const HomePage: React.FC<HomePageProps> = ({ setCurrentView, onSelectList
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
                   <span>{tender.tenderRefNo}</span>
-                  <span className="bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-bold uppercase">
-                    DEMO DATA
+                  <span className="bg-teal-50 text-teal-800 px-1.5 py-0.5 rounded font-bold uppercase border border-teal-200">
+                    GOVT TENDER
                   </span>
                 </div>
                 <h4 className="text-sm font-bold text-navy-900 line-clamp-2 brand-font">

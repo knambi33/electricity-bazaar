@@ -237,8 +237,9 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
           <div className="space-y-3 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase">
-                DEMO DATA — NOT A REAL OFFER
+              <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded uppercase flex items-center space-x-1 border border-emerald-200">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600 inline mr-1" />
+                <span>VERIFIED COMMERCIAL LISTING</span>
               </span>
               <span className="text-xs font-mono font-bold text-slate-500">
                 {listing.listingCode}

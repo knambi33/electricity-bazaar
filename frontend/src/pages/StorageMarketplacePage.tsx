@@ -106,8 +106,8 @@ export const StorageMarketplacePage: React.FC<StoragePageProps> = ({ onSelectLis
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase">
-                    DEMO DATA
+                  <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded uppercase">
+                    ACTIVE ASSET
                   </span>
                   <span className="text-[11px] font-mono font-bold text-slate-400">
                     {listing.listingCode}

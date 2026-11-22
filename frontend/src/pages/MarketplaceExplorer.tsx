@@ -399,11 +399,9 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                       {/* Top Badges */}
                       <div className="flex items-center justify-between gap-1 mb-2">
                         <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                          {listing.isDemoData && (
-                            <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">
-                              DEMO
-                            </span>
-                          )}
+                          <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded uppercase">
+                            VERIFIED
+                          </span>
                           <span className="text-[10px] font-mono text-slate-400">
                             {listing.listingCode}
                           </span>

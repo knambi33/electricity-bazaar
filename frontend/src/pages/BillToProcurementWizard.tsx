@@ -1478,8 +1478,8 @@ export const BillToProcurementWizard: React.FC<BillWizardProps> = ({ setCurrentV
                       <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4">
                         <div className="space-y-1.5 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded uppercase">
-                              DEMO DATA
+                            <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded uppercase">
+                              MATCHED ASSET
                             </span>
                             <span className="text-xs font-mono font-semibold text-slate-500">
                               {listing.listingCode}

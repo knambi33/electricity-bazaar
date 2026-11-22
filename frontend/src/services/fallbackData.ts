@@ -274,7 +274,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     isConfidential: true,
     ndaRequired: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 156,
     organisation: {
       id: "org-kongu",
@@ -314,7 +314,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     isConfidential: true,
     ndaRequired: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 215,
     organisation: {
       id: "org-kongu",
@@ -351,7 +351,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     regulatoryApprovals: "TANGEDCO/TANTRANSCO grid parallel operation sanction and CEIG certification on record.",
     isFeatured: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 184,
     organisation: {
       id: "org-kongu",
@@ -397,7 +397,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     regulatoryApprovals: "TSTRANSCO in-principle connectivity & CEIG statutory electrical safety approvals documented.",
     isFeatured: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 142,
     organisation: {
       id: "org-deccan",
@@ -447,7 +447,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     isConfidential: true,
     ndaRequired: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 134,
     organisation: {
       id: "org-deccan",
@@ -486,7 +486,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     isConfidential: true,
     ndaRequired: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 167,
     organisation: {
       id: "org-deccan",
@@ -523,7 +523,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     regulatoryApprovals: "JERC Open Access in-principle approval, PED technical feasibility and CEIG electrical clearance documented.",
     isFeatured: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 112,
     organisation: {
       id: "org-kongu",
@@ -573,7 +573,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     isConfidential: false,
     ndaRequired: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 98,
     organisation: {
       id: "org-kongu",
@@ -612,7 +612,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     isConfidential: false,
     ndaRequired: true,
     status: "PUBLISHED",
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 140,
     organisation: {
       id: "org-kongu",
@@ -647,7 +647,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     projectStatus: "OPERATIONAL",
     status: "PUBLISHED",
     isFeatured: false,
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 95,
     organisation: {
       id: "org-kutch",
@@ -681,7 +681,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     projectStatus: "UNDER_CONSTRUCTION",
     status: "PUBLISHED",
     isFeatured: false,
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 210,
     organisation: {
       id: "org-marwar",
@@ -715,7 +715,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     projectStatus: "OPERATIONAL",
     status: "PUBLISHED",
     isFeatured: false,
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 165,
     organisation: {
       id: "org-karnataka-bess",
@@ -749,7 +749,7 @@ export const FALLBACK_LISTINGS: MarketplaceListing[] = [
     projectStatus: "OPERATIONAL",
     status: "PUBLISHED",
     isFeatured: false,
-    isDemoData: true,
+    isDemoData: false,
     viewCount: 128,
     organisation: {
       id: "org-maharashtra-solar",

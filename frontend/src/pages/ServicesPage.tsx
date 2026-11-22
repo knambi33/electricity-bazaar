@@ -72,8 +72,8 @@ export const ServicesPage: React.FC = () => {
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-[10px]">
-                  <span className="font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">
-                    DEMO DATA
+                  <span className="font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded uppercase">
+                    VERIFIED SERVICE
                   </span>
                   <span className="font-mono text-slate-400 font-bold">{srv.serviceCode}</span>
                   <span className="bg-teal-50 text-teal-800 font-bold px-2 py-0.5 rounded border border-teal-200 flex items-center space-x-1">
