@@ -191,6 +191,62 @@ const MAP_MARKERS: MapMarkerItem[] = [
     subMetric: 'TNERC Pilot Jurisdiction',
     details: 'State nodal agency for Open Access and Group Captive verification.'
   },
+  {
+    id: 'TN-SOL-21',
+    name: '2 MW Solar Power Plant with TANGEDCO PPA',
+    type: 'POWER',
+    state: 'Tamil Nadu',
+    district: 'Dindigul District',
+    coords: [10.3673, 77.9803],
+    metric: '2 MW (PPA @ ₹5.10/kWh)',
+    subMetric: 'TANGEDCO Utility PPA • 80% Completed',
+    details: 'Dr. Padmanathan K (9500144328). Active 25-yr TANGEDCO PPA at ₹5.10/kWh. 1 MW 80% done, 1 MW under accomplishment.'
+  },
+  {
+    id: 'TN-SOL-22',
+    name: '2 MW AC / 2.6 MW DC Solar Plant (Turnkey Sale)',
+    type: 'POWER',
+    state: 'Tamil Nadu',
+    district: 'Tiruvannamalai District',
+    coords: [12.2253, 79.0747],
+    metric: '2 MW AC (2.6 MWp DC)',
+    subMetric: '₹5.75 Cr/MW • 33 kV Substation 900m',
+    details: 'Turnkey sale at ₹11.50 Cr total. 6 Acres owned land, Tier-1 BOM, Group Captive or Third Party, COD Dec 2026. Contact: 7200200713.',
+    isConfidential: true
+  },
+  {
+    id: 'TN-SOL-23',
+    name: '10 MW - 25 MW Running & Ready Solar Portfolio',
+    type: 'POWER',
+    state: 'Tamil Nadu',
+    district: 'Karur / Central Tamil Nadu Hub',
+    coords: [10.9601, 78.0766],
+    metric: '10 MW to 25 MW Portfolio',
+    subMetric: 'Commissioned Group Captive & Ready COD',
+    details: 'WMD / Senthil Kumar (+91 8610572660). Operational group captive & ready to commission solar plants available on first-cum basis.'
+  },
+  {
+    id: 'TN-SOL-24',
+    name: '25 MW Utility-Scale Solar Power Plant Installation',
+    type: 'POWER',
+    state: 'Tamil Nadu',
+    district: 'Southern Solar Corridor, Tamil Nadu',
+    coords: [9.5000, 77.9500],
+    metric: '25 MW TopCon Installation',
+    subMetric: '550 Wp Bifacial • 33 kV Grid Transformer',
+    details: 'Thota Dinesh (8688351817). Complete Bill of Materials (BOM) on record: 550 Wp TopCon modules, 33 kV ONAN transformer, SCADA.'
+  },
+  {
+    id: 'TN-SOL-25',
+    name: '10 MW AC / 12.5 MWp DC Operational Running Solar Plant',
+    type: 'POWER',
+    state: 'Tamil Nadu',
+    district: 'Nagapattinam District',
+    coords: [10.7672, 79.8449],
+    metric: '10 MW AC (12.5 MWp DC)',
+    subMetric: '₹5.75 Cr/MW (₹57.50 Cr Total) • Operational',
+    details: 'VEL Engineering Services. Commissioned Sept 2025. LONGi 615 Wp Bifacial, Hopewind 320 kW inverters, LAPP cables, 31 Acres owned land.'
+  },
 
   // Telangana
   {

@@ -387,6 +387,7 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                 const isBookmarked = bookmarkedIds.includes(listing.id);
                 const isBay = listing.category === 'SUBSTATION_BAY';
                 const isLand = listing.category === 'LAND_PARCEL';
+                const isCapexSale = listing.commercialModel === 'CAPEX_SALE';
 
                 return (
                   <div
@@ -398,9 +399,11 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                       {/* Top Badges */}
                       <div className="flex items-center justify-between gap-1 mb-2">
                         <div className="flex items-center space-x-1.5 flex-wrap gap-y-1">
-                          <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">
-                            DEMO
-                          </span>
+                          {listing.isDemoData && (
+                            <span className="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded uppercase">
+                              DEMO
+                            </span>
+                          )}
                           <span className="text-[10px] font-mono text-slate-400">
                             {listing.listingCode}
                           </span>
@@ -408,6 +411,11 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                             <span className="text-[9px] font-bold bg-slate-900 text-teal-300 px-1.5 py-0.5 rounded flex items-center space-x-1 border border-slate-700">
                               <Lock className="w-2.5 h-2.5 text-teal-400" />
                               <span>NDA</span>
+                            </span>
+                          )}
+                          {isCapexSale && (
+                            <span className="text-[9px] font-bold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded uppercase">
+                              TURNKEY SALE
                             </span>
                           )}
                           {isBay && (
@@ -461,13 +469,17 @@ export const MarketplaceExplorer: React.FC<MarketplaceExplorerProps> = ({ onSele
                         </div>
                         <div className="text-right">
                           <span className="text-slate-400 block text-[9px] uppercase font-bold">
-                            {isLand ? 'Terms' : isBay ? 'Structure' : 'PPA Tariff'}
+                            {isLand ? 'Terms' : isBay ? 'Structure' : isCapexSale ? 'Asset Sale' : 'PPA Tariff'}
                           </span>
                           <span className="font-extrabold text-teal-600 text-sm">
                             {isLand ? (
                               'Long Lease'
                             ) : isBay ? (
                               'Dedicated Bay'
+                            ) : isCapexSale ? (
+                              listing.priceBasisConditions?.includes('5.75')
+                                ? '₹5.75 Cr/MW'
+                                : 'Turnkey Asset'
                             ) : listing.indicativePricePerKwh ? (
                               <>
                                 ₹{listing.indicativePricePerKwh.toFixed(2)}

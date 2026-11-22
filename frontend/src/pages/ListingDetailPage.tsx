@@ -287,13 +287,27 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 min-w-[260px] flex flex-col justify-between space-y-4">
             <div>
               <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                {isLand ? 'Indicative Land Lease / Valuation' : isBay ? 'Indicative Bay Tariff / Charge' : 'Indicative Generation Tariff'}
+                {isLand 
+                  ? 'Indicative Land Lease / Valuation' 
+                  : isBay 
+                  ? 'Indicative Bay Tariff / Charge' 
+                  : listing.commercialModel === 'CAPEX_SALE'
+                  ? 'Turnkey Asset Valuation / Asking Price'
+                  : 'Indicative Generation Tariff'
+                }
               </span>
               <div className="text-3xl font-black text-navy-900 brand-font mt-0.5">
                 {isLand ? (
                   <span className="text-xl">₹4.5L - ₹6.0L <span className="text-xs font-normal text-slate-500">/ acre / yr</span></span>
                 ) : isBay ? (
                   <span className="text-xl">Dedicated STU/CTU Bay</span>
+                ) : listing.commercialModel === 'CAPEX_SALE' ? (
+                  <span className="text-2xl text-teal-700 font-extrabold">
+                    {listing.priceBasisConditions?.includes('5.75') ? '₹5.75 Cr / MW' : 'Turnkey Asset'}
+                    <span className="text-xs font-normal text-slate-500 block text-[11px] mt-0.5">
+                      {listing.totalCapacityMw ? `Total Asset: ₹${(listing.totalCapacityMw * 5.75).toFixed(2)} Cr` : 'Full Acquisition'}
+                    </span>
+                  </span>
                 ) : listing.indicativePricePerKwh ? (
                   <>
                     ₹{listing.indicativePricePerKwh.toFixed(2)}
@@ -304,7 +318,13 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                 )}
               </div>
               <span className="text-[11px] text-teal-700 font-semibold block mt-1">
-                {listing.commercialModel === 'GROUP_CAPTIVE' ? '✓ 0 CSS under Group Captive' : 'Open Access Charges Extra'}
+                {listing.commercialModel === 'CAPEX_SALE'
+                  ? '✓ Clear Title Freehold Land & 33 kV Grid Interconnection'
+                  : listing.listingCode === 'LST-2026-TN-SOL-21'
+                  ? '✓ Long-term PPA with Tamil Nadu TANGEDCO'
+                  : listing.commercialModel === 'GROUP_CAPTIVE' 
+                  ? '✓ 0 CSS under Group Captive' 
+                  : 'Open Access Charges Extra'}
               </span>
             </div>
 
@@ -432,6 +452,74 @@ export const ListingDetailPage: React.FC<ListingDetailPageProps> = ({
                   <span className="text-slate-500 block text-[11px]">Title Due Diligence & Statutory Permissions</span>
                   <span className="font-bold text-slate-800">
                     {listing.regulatoryApprovals || '30-year search report completed. Non-agricultural (NA) conversion and Gram Panchayat NOC in place.'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Turnkey Acquisition & Capex Sale Specifics */}
+          {listing.commercialModel === 'CAPEX_SALE' && (
+            <div className="bg-white rounded-2xl border border-amber-300 p-6 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-navy-900 brand-font flex items-center space-x-2">
+                  <Building2 className="w-4 h-4 text-amber-600" />
+                  <span>Turnkey Solar Asset Acquisition & BOM Highlights</span>
+                </h3>
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-900 px-2.5 py-0.5 rounded-full uppercase">
+                  Asset Divestment / Sale
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                  <span className="text-slate-500 block text-[11px]">Plant Operational Status</span>
+                  <span className="font-extrabold text-navy-900">{listing.projectStatus.replace(/_/g, ' ')}</span>
+                </div>
+                <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                  <span className="text-slate-500 block text-[11px]">Land Extent & Title</span>
+                  <span className="font-extrabold text-slate-800">
+                    {listing.landAreaAcres ? `${listing.landAreaAcres} Acres (Owned Freehold)` : 'Clear Title Owned Land'}
+                  </span>
+                </div>
+                <div className="p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                  <span className="text-slate-500 block text-[11px]">Substation Injection</span>
+                  <span className="font-extrabold text-teal-700">
+                    {listing.substationVoltageKv || 33} kV Level
+                  </span>
+                </div>
+              </div>
+              <div className="p-3.5 bg-slate-50 rounded-xl text-xs text-slate-700 space-y-1.5 leading-relaxed">
+                <div className="font-bold text-slate-900">Commercial Acquisition Conditions & BOM:</div>
+                <p>{listing.priceBasisConditions}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Unlocked / Direct Developer Contact Card */}
+          {(!listing.isConfidential || isNdaUnlocked) && (
+            <div className="bg-slate-900 border border-teal-500/40 rounded-2xl p-5 text-white shadow-lg space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2 text-xs font-bold text-teal-400 uppercase tracking-wider">
+                  <ShieldCheck className="w-4 h-4 text-teal-400" />
+                  <span>Authorized Seller & Asset Representation</span>
+                </div>
+                <span className="text-[10px] bg-teal-500/20 text-teal-300 border border-teal-500/30 px-2 py-0.5 rounded font-mono">
+                  VERIFIED ASSET
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Authorized Entity / Contact</span>
+                  <span className="font-extrabold text-white text-sm">{listing.organisation.legalName}</span>
+                </div>
+                <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Verified Location</span>
+                  <span className="font-bold text-teal-300">{listing.projectLocation}</span>
+                </div>
+                <div className="p-3 bg-slate-800/80 rounded-xl border border-slate-700">
+                  <span className="text-slate-400 block text-[10px] uppercase font-bold">Compliance Status</span>
+                  <span className="font-semibold text-slate-200 text-[11px]">
+                    {listing.organisation.verificationNotes || 'Grid interconnection & land title deeds verified'}
                   </span>
                 </div>
               </div>

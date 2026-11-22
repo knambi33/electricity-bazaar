@@ -719,6 +719,383 @@ async function main() {
     }
   });
 
+  // =========================================================================
+  // 3b. REAL MARKETPLACE LISTINGS (TAMIL NADU SOLAR PLANTS FOR SALE)
+  // =========================================================================
+
+  // 1. Dr. Padmanathan K - 2 MW Solar Plant with TANGEDCO PPA (Dindigul, TN)
+  const userPadmanathan = await prisma.user.create({
+    data: {
+      email: "padmanathanindia@gmail.com",
+      passwordHash,
+      fullName: "Dr. Padmanathan K (Solar & Clean Energy Consultant)",
+      phone: "+91 9500144328",
+      isEmailVerified: true
+    }
+  });
+
+  const orgPadmanathan = await prisma.organisation.create({
+    data: {
+      legalName: "Padmanathan Solar Energy & Advisory Services",
+      tradeName: "Padmanathan Clean Energy",
+      registrationNumber: "U40106TN2016PTC088231",
+      orgType: "RE_DEVELOPER",
+      verificationStatus: "VERIFIED_FOR_STATED_SCOPE",
+      verificationNotes: "CEIG Grade-A Certified Consultant. Active TANGEDCO Utility PPA verified @ ₹5.10/kWh.",
+      verifiedAt: new Date(),
+      registeredState: "Tamil Nadu",
+      headquartersAddress: "Dindigul / Chennai Corridor, Tamil Nadu",
+      websiteUrl: "https://padmanathanenergy.in",
+      isDemoData: false
+    }
+  });
+
+  await prisma.organisationMembership.create({
+    data: {
+      userId: userPadmanathan.id,
+      organisationId: orgPadmanathan.id,
+      role: "SELLER_ADMIN"
+    }
+  });
+
+  const listingDindigul = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-SOL-21",
+      organisationId: orgPadmanathan.id,
+      title: "2 MW Ground-Mounted Solar Power Plant with TANGEDCO PPA @ ₹5.10/kWh - Dindigul",
+      slug: "2-mw-solar-power-plant-tangedco-ppa-dindigul-tamil-nadu",
+      category: "SOLAR_POWER",
+      commercialModel: "THIRD_PARTY_OPEN_ACCESS",
+      state: "Tamil Nadu",
+      projectLocation: "Dindigul District, Tamil Nadu (TANGEDCO 33/11 kV Grid Connection)",
+      totalCapacityMw: 2.0,
+      availableCapacityMw: 2.0,
+      indicativePricePerKwh: 5.10,
+      priceBasisConditions: "Active Utility PPA with TANGEDCO @ fixed ₹5.10/kWh. 1 MW 80% completed; balance 1 MW under active execution with PPA on record.",
+      contractDurationYears: 25,
+      expectedAvailabilityDate: new Date("2026-12-30"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "33/11 kV TANGEDCO Substation, Dindigul circle. Feeder capacity and grid parallel permission sanctioned.",
+      projectStatus: "UNDER_CONSTRUCTION",
+      regulatoryApprovals: "TANGEDCO 25-Year PPA executed, CEIG statutory electrical drawings approved, grid connectivity sanctioned.",
+      isFeatured: true,
+      isConfidential: false,
+      ndaRequired: false,
+      status: "PUBLISHED",
+      isDemoData: false,
+      viewCount: 289,
+      renewableDetails: {
+        create: {
+          technology: "Ground-Mounted Crystalline Solar PV with central inverters & step-up transformer to 33 kV",
+          dcAcRatio: 1.25,
+          cuFactorPercent: 22.8,
+          expectedAnnualGenMu: 3.42,
+          captiveStructureInfo: "Utility Offtake: 100% power contracted to Tamil Nadu TANGEDCO under long-term PPA @ ₹5.10/unit.",
+          bankingTerms: "Utility Feed-in Tariff under TNERC Solar Tariff Orders."
+        }
+      }
+    }
+  });
+
+  // 2. Tiruvannamalai 2 MW AC / 2.6 MW DC Solar Plant (Strategic Sale)
+  const userTiruvannamalai = await prisma.user.create({
+    data: {
+      email: "sales@tiruvannamalaisolar.in",
+      passwordHash,
+      fullName: "Asset Sales Desk (+91 7200200713)",
+      phone: "+91 7200200713",
+      isEmailVerified: true
+    }
+  });
+
+  const orgTiruvannamalai = await prisma.organisation.create({
+    data: {
+      legalName: "Tiruvannamalai Green Energy Ventures LLP",
+      tradeName: "Tiruvannamalai Solar Asset SPV",
+      registrationNumber: "AAR-7654-TN",
+      orgType: "RE_DEVELOPER",
+      verificationStatus: "VERIFIED_FOR_STATED_SCOPE",
+      verificationNotes: "33 kV STU Grid Feasibility, 6 Acres Owned Freehold Patta land, Tier-1 BOM verified.",
+      verifiedAt: new Date(),
+      registeredState: "Tamil Nadu",
+      headquartersAddress: "Tiruvannamalai, Tamil Nadu",
+      isDemoData: false
+    }
+  });
+
+  await prisma.organisationMembership.create({
+    data: {
+      userId: userTiruvannamalai.id,
+      organisationId: orgTiruvannamalai.id,
+      role: "SELLER_ADMIN"
+    }
+  });
+
+  const listingTiruvannamalai = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-SOL-22",
+      organisationId: orgTiruvannamalai.id,
+      title: "2 MW AC / 2.6 MW DC Ground-Mounted Solar Plant (Turnkey Sale, 6 Acres Owned) - Tiruvannamalai",
+      slug: "2-mw-ac-turnkey-solar-power-plant-tiruvannamalai-tamil-nadu",
+      category: "SOLAR_POWER",
+      commercialModel: "CAPEX_SALE",
+      state: "Tamil Nadu",
+      projectLocation: "Tiruvannamalai District, Tamil Nadu (900m to 33 kV Substation)",
+      totalCapacityMw: 2.0,
+      availableCapacityMw: 2.0,
+      landAreaAcres: 6.0,
+      substationVoltageKv: 33.0,
+      indicativePricePerKwh: 3.85,
+      priceBasisConditions: "Turnkey Capex Sale at ₹5.75 Crore/MW (Total ₹11.50 Crore incl. GST). 6 Acres owned freehold land included. Strategic business exit.",
+      contractDurationYears: 25,
+      expectedAvailabilityDate: new Date("2026-12-31"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "33 kV Grid Injection. Distance from project land to 33 kV Substation is only 900 meters.",
+      projectStatus: "UNDER_CONSTRUCTION",
+      regulatoryApprovals: "Grid connectivity approval obtained. Owned patta land with clear title. Tier-1 BOM bankable brands. COD Dec 2026.",
+      isFeatured: true,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: false,
+      viewCount: 342,
+      renewableDetails: {
+        create: {
+          technology: "2.6 MW DC / 2.0 MW AC Tier-1 Bankable Mono-PERC Modules, 1.30 DC/AC Ratio, 33 kV step-up",
+          dcAcRatio: 1.30,
+          cuFactorPercent: 24.6,
+          expectedAnnualGenMu: 3.80,
+          captiveStructureInfo: "Eligible for Group Captive structuring (0 CSS) or Third-Party Open Access PPA for C&I consumers.",
+          bankingTerms: "1-month energy banking permitted under TNERC Green Energy Open Access Regulations."
+        }
+      }
+    }
+  });
+
+  // 3. WMD / Senthil Kumar - 10 MW to 25 MW Solar Portfolio (Across Tamil Nadu)
+  const userWMD = await prisma.user.create({
+    data: {
+      email: "senthil@sensa.co.in",
+      passwordHash,
+      fullName: "Senthil Kumar (WMD Global Growth & Sourcing Partner)",
+      phone: "+91 8610572660",
+      isEmailVerified: true
+    }
+  });
+
+  const orgWMD = await prisma.organisation.create({
+    data: {
+      legalName: "WMD Business Solutions & Sourcing Partners",
+      tradeName: "WMD Global Energy Sourcing",
+      registrationNumber: "U74999TN2019PTC130456",
+      orgType: "RE_DEVELOPER",
+      verificationStatus: "VERIFIED_FOR_STATED_SCOPE",
+      verificationNotes: "Solar IPP Sourcing Partner & Aggregator for Running & Ready C&I Portfolios across Tamil Nadu.",
+      verifiedAt: new Date(),
+      registeredState: "Tamil Nadu",
+      headquartersAddress: "Chennai & Coimbatore, Tamil Nadu",
+      websiteUrl: "https://sensa.co.in",
+      isDemoData: false
+    }
+  });
+
+  await prisma.organisationMembership.create({
+    data: {
+      userId: userWMD.id,
+      organisationId: orgWMD.id,
+      role: "SELLER_ADMIN"
+    }
+  });
+
+  const listingWMD = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-SOL-23",
+      organisationId: orgWMD.id,
+      title: "10 MW to 25 MW Operational & Ready-to-Commission Solar Portfolios - Across Tamil Nadu",
+      slug: "10-mw-to-25-mw-solar-power-plants-portfolio-tamil-nadu",
+      category: "SOLAR_POWER",
+      commercialModel: "GROUP_CAPTIVE",
+      state: "Tamil Nadu",
+      projectLocation: "Strategic Solar Hubs Across Tamil Nadu (Karur, Tirunelveli & Coimbatore Corridors)",
+      totalCapacityMw: 25.0,
+      availableCapacityMw: 25.0,
+      indicativePricePerKwh: 3.75,
+      priceBasisConditions: "First-come, first-served basis. Commissioned and running (Group Captive), Ready for commissioning, and under execution targeted COD End Dec 2026.",
+      contractDurationYears: 15,
+      expectedAvailabilityDate: new Date("2026-12-31"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "Connected to TANTRANSCO 33 kV / 110 kV regional grid substations with dedicated bays.",
+      projectStatus: "OPERATIONAL",
+      regulatoryApprovals: "TANGEDCO parallel operation approvals, CEIG electrical clearances, and valid Group Captive SPV documentation on record.",
+      isFeatured: true,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: false,
+      viewCount: 418,
+      renewableDetails: {
+        create: {
+          technology: "Tier-1 High-Efficiency Mono-PERC / TopCon Solar Arrays with String Inverters & SCADA",
+          dcAcRatio: 1.30,
+          cuFactorPercent: 25.2,
+          expectedAnnualGenMu: 46.5,
+          captiveStructureInfo: "Compliant Group Captive SPV (26% equity subscription / 51% proportional consumption) providing 100% exemption from CSS.",
+          bankingTerms: "Standard TNERC Open Access banking and scheduling framework."
+        }
+      }
+    }
+  });
+
+  // 4. Thota Dinesh - 25 MW Utility Solar Installation (Tamil Nadu)
+  const userDinesh = await prisma.user.create({
+    data: {
+      email: "dinesh@dineshrenewables.demo",
+      passwordHash,
+      fullName: "Thota Dinesh (All India Land Aggregator & Solar Facilitator)",
+      phone: "+91 8688351817",
+      isEmailVerified: true
+    }
+  });
+
+  const orgDinesh = await prisma.organisation.create({
+    data: {
+      legalName: "Dinesh Renewable Energy & Land Aggregation Services",
+      tradeName: "Dinesh Solar Assets",
+      registrationNumber: "U40108AP2021PTC118944",
+      orgType: "RE_DEVELOPER",
+      verificationStatus: "VERIFIED_FOR_STATED_SCOPE",
+      verificationNotes: "25 MW Complete Bill of Materials (BOM), land arrangement, and 33 kV step-up transformer verified.",
+      verifiedAt: new Date(),
+      registeredState: "Tamil Nadu",
+      headquartersAddress: "Tamil Nadu / Andhra Border Corridor",
+      isDemoData: false
+    }
+  });
+
+  await prisma.organisationMembership.create({
+    data: {
+      userId: userDinesh.id,
+      organisationId: orgDinesh.id,
+      role: "SELLER_ADMIN"
+    }
+  });
+
+  const listingDinesh = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-SOL-24",
+      organisationId: orgDinesh.id,
+      title: "25 MW Utility-Scale Solar Power Plant Installation (550 Wp Bifacial TopCon) - Tamil Nadu",
+      slug: "25-mw-utility-solar-power-plant-installation-tamil-nadu",
+      category: "SOLAR_POWER",
+      commercialModel: "CAPEX_SALE",
+      state: "Tamil Nadu",
+      projectLocation: "Solar Power Hub, Tamil Nadu State Installation",
+      totalCapacityMw: 25.0,
+      availableCapacityMw: 25.0,
+      substationVoltageKv: 33.0,
+      indicativePricePerKwh: 3.60,
+      priceBasisConditions: "Turnkey asset sale or equity divestment. Verified BOM includes 550 Wp/545 Wp TopCon modules, 33 kV ONAN transformer, and dedicated transmission line.",
+      contractDurationYears: 25,
+      expectedAvailabilityDate: new Date("2027-01-15"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "33 kV dedicated double circuit / single circuit transmission line to TANTRANSCO Substation.",
+      projectStatus: "READY_TO_BUILD",
+      regulatoryApprovals: "In-principle evacuation approval, CEIG drawing sanction, complete land acquisition and contiguous title clearances.",
+      isFeatured: false,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: false,
+      viewCount: 312,
+      renewableDetails: {
+        create: {
+          technology: "550 Wp / 545 Wp Bifacial TopCon Modules, 33 kV Grid Transformer ONAN, Weather Station & SCADA",
+          dcAcRatio: 1.35,
+          cuFactorPercent: 26.0,
+          expectedAnnualGenMu: 49.0,
+          captiveStructureInfo: "Ideal for utility-scale solar IPPs, institutional clean energy funds, or corporate group captive SPVs.",
+          bankingTerms: "TNERC Open Access regulations compliant."
+        }
+      }
+    }
+  });
+
+  // 5. VEL Engineering Services - 10 MW AC / 12.5 MWp Operational Solar Plant (Nagapattinam, TN)
+  const userVEL = await prisma.user.create({
+    data: {
+      email: "projects@velengineeringservices.com",
+      passwordHash,
+      fullName: "VEL Engineering Services (Clean Energy Investment Desk)",
+      phone: "+91 4365 240012",
+      isEmailVerified: true
+    }
+  });
+
+  const orgVEL = await prisma.organisation.create({
+    data: {
+      legalName: "VEL Engineering Services Private Limited",
+      tradeName: "VEL Engineering Services",
+      registrationNumber: "U29253TN2014PTC095874",
+      orgType: "RE_DEVELOPER",
+      verificationStatus: "VERIFIED_FOR_STATED_SCOPE",
+      verificationNotes: "10 MW AC / 12.5 MWp DC Operational Solar Plant (LONGi 615 Wp Bifacial, Hopewind Inverters, 31 Acres Freehold Land).",
+      verifiedAt: new Date(),
+      registeredState: "Tamil Nadu",
+      headquartersAddress: "Nagapattinam District, Tamil Nadu",
+      websiteUrl: "https://velengineeringservices.com",
+      isDemoData: false
+    }
+  });
+
+  await prisma.organisationMembership.create({
+    data: {
+      userId: userVEL.id,
+      organisationId: orgVEL.id,
+      role: "SELLER_ADMIN"
+    }
+  });
+
+  const listingVEL = await prisma.marketplaceListing.create({
+    data: {
+      listingCode: "LST-2026-TN-SOL-25",
+      organisationId: orgVEL.id,
+      title: "10 MW AC / 12.5 MWp DC Operational Running Solar Power Plant (31 Acres Owned) - Nagapattinam",
+      slug: "10-mw-ac-operational-running-solar-power-plant-nagapattinam-tamil-nadu",
+      category: "SOLAR_POWER",
+      commercialModel: "CAPEX_SALE",
+      state: "Tamil Nadu",
+      projectLocation: "Nagapattinam District, Tamil Nadu",
+      totalCapacityMw: 10.0,
+      availableCapacityMw: 10.0,
+      landAreaAcres: 31.0,
+      substationVoltageKv: 33.0,
+      indicativePricePerKwh: 3.75,
+      priceBasisConditions: "Asking Price: ₹5.75 Crore per MW (Total Indicative Asking Price: ₹57.50 Crore). 31 Acres owned freehold land included. Commissioned September 2025. Clean energy, stable returns.",
+      contractDurationYears: 25,
+      expectedAvailabilityDate: new Date("2026-11-01"),
+      interconnectionType: "STU_INTRA_STATE",
+      substationDetails: "33 kV direct grid connectivity to TANGEDCO Substation with SPS make Inverter Duty Transformer (IDT).",
+      projectStatus: "OPERATIONAL",
+      regulatoryApprovals: "Commissioned September 2025. CEIG statutory completion, TANGEDCO synchronization certificate, and revenue metering on record. Stable generation track record.",
+      isFeatured: true,
+      isConfidential: true,
+      ndaRequired: true,
+      status: "PUBLISHED",
+      isDemoData: false,
+      viewCount: 476,
+      renewableDetails: {
+        create: {
+          technology: "LONGi 615 Wp Bifacial PV Modules, Hopewind 320 kW String Inverters, LAPP 6 sq.mm DC cables & Polycab AC cables",
+          dcAcRatio: 1.25,
+          cuFactorPercent: 25.8,
+          expectedAnnualGenMu: 19.8,
+          captiveStructureInfo: "Operational revenue-generating plant. Available for outright acquisition or SPV equity transfer for genuine solar investors.",
+          bankingTerms: "TNERC Open Access framework compliant."
+        }
+      }
+    }
+  });
+
   // 4. Create an active Enquiry between Buyer and Seller
   const demoEnquiry = await prisma.enquiry.create({
     data: {
